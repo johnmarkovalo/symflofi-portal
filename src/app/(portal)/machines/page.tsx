@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUserContext } from "@/lib/roles";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -15,18 +17,30 @@ function TierBadge({ tier }: { tier: string }) {
 }
 
 export default async function MachinesPage() {
-  const supabase = await createClient();
+  const ctx = await getUserContext();
+  if (!ctx || !ctx.role) redirect("/login");
 
-  const { data: machines } = await supabase
+  const supabase = await createClient();
+  const isAdmin = ctx.role === "admin";
+
+  let query = supabase
     .from("machines")
     .select("*, operators(name, email)")
     .order("last_seen_at", { ascending: false, nullsFirst: false });
+
+  if (!isAdmin && ctx.operatorId) {
+    query = query.eq("operator_id", ctx.operatorId);
+  }
+
+  const { data: machines } = await query;
 
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Machines</h1>
-        <p className="text-sm text-muted-foreground mt-1">Registered devices across all operators</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isAdmin ? "All registered devices across operators" : "Your registered devices"}
+        </p>
       </div>
 
       <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-hidden">
@@ -35,7 +49,9 @@ export default async function MachinesPage() {
             <tr className="border-b border-border">
               <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Name</th>
               <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Operator</th>
+              {isAdmin && (
+                <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Operator</th>
+              )}
               <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Tier</th>
               <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Hardware</th>
               <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Version</th>
@@ -55,9 +71,11 @@ export default async function MachinesPage() {
                       {isOnline ? "Online" : "Offline"}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-muted-foreground">
-                    {m.operators?.name || m.operators?.email || "-"}
-                  </td>
+                  {isAdmin && (
+                    <td className="px-5 py-4 text-muted-foreground">
+                      {m.operators?.name || m.operators?.email || "-"}
+                    </td>
+                  )}
                   <td className="px-5 py-4"><TierBadge tier={m.license_tier} /></td>
                   <td className="px-5 py-4 text-muted-foreground">{m.hardware || "-"}</td>
                   <td className="px-5 py-4 text-muted-foreground font-mono text-xs">{m.app_version || "-"}</td>
@@ -69,7 +87,7 @@ export default async function MachinesPage() {
             })}
             {(!machines || machines.length === 0) && (
               <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+                <td colSpan={isAdmin ? 7 : 6} className="px-5 py-12 text-center text-muted-foreground">
                   No machines registered yet
                 </td>
               </tr>

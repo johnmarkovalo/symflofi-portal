@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 
 function TierBadge({ tier }: { tier: string }) {
@@ -16,6 +18,9 @@ function TierBadge({ tier }: { tier: string }) {
 }
 
 export default async function OperatorsPage() {
+  const ctx = await getUserContext();
+  if (!ctx || ctx.role !== "admin") redirect("/licenses");
+
   const supabase = await createClient();
 
   const { data: operators } = await supabase

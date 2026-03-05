@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 
 function TierBadge({ tier }: { tier: string }) {
@@ -34,6 +35,9 @@ export default async function OperatorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const ctx = await getUserContext();
+  if (!ctx || ctx.role !== "admin") redirect("/licenses");
+
   const { id } = await params;
   const supabase = await createClient();
 

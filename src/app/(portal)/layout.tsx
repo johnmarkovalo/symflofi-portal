@@ -1,10 +1,18 @@
+import { redirect } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import { getUserContext } from "@/lib/roles";
 
-export default function PortalLayout({
+export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const ctx = await getUserContext();
+
+  if (!ctx || !ctx.role) {
+    redirect("/login");
+  }
+
   return (
     <div className="flex min-h-screen bg-background relative">
       {/* Background ambient glow */}
@@ -15,7 +23,7 @@ export default function PortalLayout({
           style={{ background: "linear-gradient(to top right, oklch(0.45 0.18 250), oklch(0.3 0.12 280))" }} />
       </div>
 
-      <Sidebar />
+      <Sidebar role={ctx.role} email={ctx.email} />
       <main className="flex-1 p-8 relative z-10">{children}</main>
     </div>
   );
