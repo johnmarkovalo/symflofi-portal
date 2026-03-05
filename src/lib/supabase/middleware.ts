@@ -35,7 +35,9 @@ export async function updateSession(request: NextRequest) {
 
   // Allow public routes
   const publicPaths = ["/signin", "/signup", "/auth/callback"];
-  const isPublic = publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
+  const isPublic =
+    request.nextUrl.pathname === "/" ||
+    publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -45,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (request.nextUrl.pathname === "/signin" || request.nextUrl.pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
