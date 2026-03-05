@@ -18,14 +18,10 @@ export async function getUserContext(): Promise<UserContext | null> {
 
   if (!user) return null;
 
-  // Check if admin
-  const { data: admin } = await supabase
-    .from("admin_users")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .single();
+  // Check if admin using the is_admin() DB function (bypasses RLS via SECURITY DEFINER)
+  const { data: isAdmin } = await supabase.rpc("is_admin");
 
-  if (admin) {
+  if (isAdmin === true) {
     return {
       role: "admin",
       userId: user.id,
@@ -34,18 +30,18 @@ export async function getUserContext(): Promise<UserContext | null> {
   }
 
   // Check if operator
-  const { data: operator } = await supabase
+  const { data: operators } = await supabase
     .from("operators")
     .select("id")
     .eq("auth_user_id", user.id)
-    .single();
+    .limit(1);
 
-  if (operator) {
+  if (operators && operators.length > 0) {
     return {
       role: "operator",
       userId: user.id,
       email: user.email!,
-      operatorId: operator.id,
+      operatorId: operators[0].id,
     };
   }
 

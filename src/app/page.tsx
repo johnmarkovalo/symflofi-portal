@@ -4,13 +4,14 @@ import { getUserContext } from "@/lib/roles";
 export default async function Home() {
   const ctx = await getUserContext();
 
-  if (!ctx || !ctx.role) {
+  if (!ctx) {
     redirect("/login");
   }
 
-  if (ctx.role === "admin") {
-    redirect("/dashboard");
+  // Always go to dashboard — the layout handles access denied for null roles
+  if (ctx.role === "operator") {
+    redirect("/licenses");
   }
 
-  redirect("/licenses");
+  redirect("/dashboard");
 }

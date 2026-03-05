@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Allow public routes
-  const publicPaths = ["/login", "/auth/callback"];
+  const publicPaths = ["/login", "/register", "/auth/callback"];
   const isPublic = publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
 
   if (!user && !isPublic) {
@@ -43,9 +43,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
+  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/register")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 

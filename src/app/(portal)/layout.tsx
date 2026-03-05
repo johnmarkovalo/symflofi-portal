@@ -9,8 +9,30 @@ export default async function PortalLayout({
 }) {
   const ctx = await getUserContext();
 
-  if (!ctx || !ctx.role) {
+  if (!ctx) {
     redirect("/login");
+  }
+
+  // User is authenticated but has no role — show access denied instead of redirecting
+  if (!ctx.role) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-8 max-w-sm text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-4">
+            <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <h1 className="text-lg font-bold text-foreground mb-2">Access Denied</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Your account ({ctx.email}) is not linked to an admin or operator profile. Contact support.
+          </p>
+          <form action="/auth/signout" method="post">
+            <a href="/login" className="text-sm text-primary hover:text-primary/80">Sign out</a>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   return (
