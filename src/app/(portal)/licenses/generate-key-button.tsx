@@ -47,33 +47,36 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
     return (
       <button
         onClick={() => setOpen(true)}
-        className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+        className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
       >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
         Generate Key
       </button>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Generate License Key</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md p-6">
+        <h2 className="text-lg font-bold text-foreground mb-5">Generate License Key</h2>
 
         {generatedKey ? (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">License key generated successfully:</p>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-              <p className="font-mono text-xl font-bold text-gray-900 select-all">{generatedKey}</p>
+            <p className="text-sm text-muted-foreground">License key generated successfully:</p>
+            <div className="bg-muted border border-border rounded-xl p-5 text-center">
+              <p className="font-mono text-xl font-bold text-foreground select-all">{generatedKey}</p>
             </div>
             <button
               onClick={() => { navigator.clipboard.writeText(generatedKey); }}
-              className="w-full bg-gray-100 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="w-full bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all"
             >
               Copy to Clipboard
             </button>
             <button
               onClick={handleClose}
-              className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="w-full bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
             >
               Done
             </button>
@@ -81,11 +84,11 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tier</label>
               <select
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="trial">Trial</option>
                 <option value="lite">Lite</option>
@@ -95,11 +98,11 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Operator (optional)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Operator (optional)</label>
               <select
                 value={operatorId}
                 onChange={(e) => setOperatorId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="">Unassigned</option>
                 {operators.map((op) => (
@@ -111,11 +114,11 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duration (months)</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Duration</label>
               <select
                 value={months}
                 onChange={(e) => setMonths(Number(e.target.value))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value={1}>1 month</option>
                 <option value={3}>3 months</option>
@@ -128,14 +131,14 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleClose}
-                className="flex-1 bg-gray-100 text-gray-700 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="flex-1 bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex-1 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-all shadow-lg shadow-primary/25"
               >
                 {loading ? "Generating..." : "Generate"}
               </button>

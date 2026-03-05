@@ -23,26 +23,38 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col min-h-screen">
-      <div className="px-6 py-5 border-b border-gray-800">
-        <h1 className="text-lg font-bold">SymfloFi</h1>
-        <p className="text-xs text-gray-400">Cloud Portal</p>
+    <aside className="w-64 bg-card/50 backdrop-blur-xl border-r border-border flex flex-col min-h-screen relative">
+      {/* Subtle glow */}
+      <div className="absolute top-0 left-0 w-full h-32 glow-indigo pointer-events-none" />
+
+      <div className="px-6 py-5 border-b border-border relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-foreground">SymfloFi</h1>
+            <p className="text-[11px] text-muted-foreground">Cloud Portal</p>
+          </div>
+        </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 relative z-10">
         {nav.map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                 active
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  ? "bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/10"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
               }`}
             >
-              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <svg className="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
               </svg>
               {item.label}
@@ -51,12 +63,12 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-gray-800">
+      <div className="px-3 py-4 border-t border-border relative z-10">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all w-full border border-transparent"
         >
-          <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <svg className="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3-3h-9m9 0l-3-3m3 3l-3 3" />
           </svg>
           Sign out

@@ -1,6 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
+function TierBadge({ tier }: { tier: string }) {
+  const styles: Record<string, string> = {
+    enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    pro: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+    lite: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    trial: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[tier] ?? styles.trial}`}>
+      {tier}
+    </span>
+  );
+}
+
 export default async function OperatorsPage() {
   const supabase = await createClient();
 
@@ -12,54 +26,51 @@ export default async function OperatorsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Operators</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Operators</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage operator accounts</p>
+        </div>
         <Link
           href="/operators/new"
-          className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
         >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
           Add Operator
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Plan</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Licenses</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-500">Created</th>
+            <tr className="border-b border-border">
+              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Name</th>
+              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Email</th>
+              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Plan</th>
+              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Licenses</th>
+              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Created</th>
             </tr>
           </thead>
           <tbody>
             {operators?.map((op) => (
-              <tr key={op.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">
-                  <Link href={`/operators/${op.id}`} className="hover:text-blue-600">
+              <tr key={op.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                <td className="px-5 py-4 font-medium text-foreground">
+                  <Link href={`/operators/${op.id}`} className="hover:text-primary transition-colors">
                     {op.name || "Unnamed"}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{op.email}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    op.plan === "enterprise" ? "bg-purple-100 text-purple-700" :
-                    op.plan === "pro" ? "bg-blue-100 text-blue-700" :
-                    op.plan === "lite" ? "bg-green-100 text-green-700" :
-                    "bg-gray-100 text-gray-700"
-                  }`}>
-                    {op.plan}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{op.license_keys?.[0]?.count ?? 0}</td>
-                <td className="px-4 py-3 text-gray-500">
+                <td className="px-5 py-4 text-muted-foreground">{op.email}</td>
+                <td className="px-5 py-4"><TierBadge tier={op.plan} /></td>
+                <td className="px-5 py-4 text-muted-foreground">{op.license_keys?.[0]?.count ?? 0}</td>
+                <td className="px-5 py-4 text-muted-foreground">
                   {new Date(op.created_at).toLocaleDateString()}
                 </td>
               </tr>
             ))}
             {(!operators || operators.length === 0) && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
                   No operators yet
                 </td>
               </tr>

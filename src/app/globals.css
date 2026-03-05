@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+@theme inline {
+  --color-background: #09090b;
+  --color-foreground: #fafafa;
+  --color-muted: #18181b;
+  --color-muted-foreground: #a1a1aa;
+  --color-card: #0f0f12;
+  --color-card-foreground: #fafafa;
+  --color-border: #27272a;
+  --color-input: #27272a;
+  --color-primary: #6366f1;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #1e1b4b;
+  --color-accent-foreground: #c7d2fe;
+  --color-destructive: #ef4444;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Glow effects */
+.glow-indigo {
+  background: radial-gradient(ellipse at center, oklch(0.45 0.2 270 / 0.15), transparent 70%);
+}
+.glow-purple {
+  background: radial-gradient(ellipse at center, oklch(0.4 0.2 300 / 0.12), transparent 70%);
+}
