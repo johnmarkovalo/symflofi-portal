@@ -18,7 +18,7 @@ function TierBadge({ tier }: { tier: string }) {
 
 export default async function MachinesPage() {
   const ctx = await getUserContext();
-  if (!ctx || !ctx.role) redirect("/login");
+  if (!ctx || !ctx.role) redirect("/signin");
 
   const supabase = await createClient();
   const isAdmin = ctx.role === "admin";

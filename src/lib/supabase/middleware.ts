@@ -34,16 +34,16 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Allow public routes
-  const publicPaths = ["/login", "/signup", "/auth/callback"];
+  const publicPaths = ["/signin", "/signup", "/auth/callback"];
   const isPublic = publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/signin";
     return NextResponse.redirect(url);
   }
 
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
+  if (user && (request.nextUrl.pathname === "/signin" || request.nextUrl.pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

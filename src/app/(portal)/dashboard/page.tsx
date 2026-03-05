@@ -4,7 +4,7 @@ import { getUserContext } from "@/lib/roles";
 
 export default async function DashboardPage() {
   const ctx = await getUserContext();
-  if (!ctx) redirect("/login");
+  if (!ctx) redirect("/signin");
   if (ctx.role === "operator") redirect("/licenses");
 
   const supabase = await createClient();

@@ -124,7 +124,7 @@ export default function RegisterPage() {
                 We sent a confirmation link to <span className="text-foreground font-medium">{email}</span>. Click the link to activate your account.
               </p>
               <Link
-                href="/login"
+                href="/signin"
                 className="inline-block text-sm text-primary hover:text-primary/80 transition-colors"
               >
                 Back to login
@@ -222,7 +222,7 @@ export default function RegisterPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+                <Link href="/signin" className="text-primary hover:text-primary/80 font-medium transition-colors">
                   Sign in
                 </Link>
               </p>

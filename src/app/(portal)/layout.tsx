@@ -10,7 +10,7 @@ export default async function PortalLayout({
   const ctx = await getUserContext();
 
   if (!ctx) {
-    redirect("/login");
+    redirect("/signin");
   }
 
   // User is authenticated but has no role — show access denied instead of redirecting
@@ -28,7 +28,7 @@ export default async function PortalLayout({
             Your account ({ctx.email}) is not linked to an admin or operator profile. Contact support.
           </p>
           <form action="/auth/signout" method="post">
-            <a href="/login" className="text-sm text-primary hover:text-primary/80">Sign out</a>
+            <a href="/signin" className="text-sm text-primary hover:text-primary/80">Sign out</a>
           </form>
         </div>
       </div>

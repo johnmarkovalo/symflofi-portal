@@ -31,7 +31,7 @@ function StatusBadge({ activated }: { activated: boolean }) {
 
 export default async function LicensesPage() {
   const ctx = await getUserContext();
-  if (!ctx || !ctx.role) redirect("/login");
+  if (!ctx || !ctx.role) redirect("/signin");
 
   const supabase = await createClient();
   const isAdmin = ctx.role === "admin";
