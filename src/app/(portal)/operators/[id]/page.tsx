@@ -111,8 +111,9 @@ export default async function OperatorDetailPage({
           {machines && machines.length > 0 ? (
             <div className="space-y-2">
               {machines.map((m) => {
+                const now = Date.now(); // eslint-disable-line react-hooks/purity
                 const isOnline = m.last_seen_at &&
-                  new Date(m.last_seen_at).getTime() > Date.now() - 5 * 60 * 1000;
+                  new Date(m.last_seen_at).getTime() > now - 5 * 60 * 1000;
                 return (
                   <div key={m.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
                     <div>
