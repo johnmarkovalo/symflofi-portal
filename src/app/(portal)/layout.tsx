@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import { getUserContext } from "@/lib/roles";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function PortalLayout({
   children,
@@ -13,7 +14,6 @@ export default async function PortalLayout({
     redirect("/signin");
   }
 
-  // User is authenticated but has no role — show access denied instead of redirecting
   if (!ctx.role) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -35,9 +35,18 @@ export default async function PortalLayout({
     );
   }
 
+  let pendingRequests = 0;
+  if (ctx.role === "admin") {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("license_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+    pendingRequests = count ?? 0;
+  }
+
   return (
     <div className="flex min-h-screen bg-background relative">
-      {/* Background ambient glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-3xl opacity-[0.07]"
           style={{ background: "linear-gradient(to bottom left, oklch(0.5 0.2 270), oklch(0.3 0.15 300))" }} />
@@ -45,7 +54,7 @@ export default async function PortalLayout({
           style={{ background: "linear-gradient(to top right, oklch(0.45 0.18 250), oklch(0.3 0.12 280))" }} />
       </div>
 
-      <Sidebar role={ctx.role} email={ctx.email} />
+      <Sidebar role={ctx.role} email={ctx.email} pendingRequests={pendingRequests} />
       <main className="flex-1 p-8 relative z-10">{children}</main>
     </div>
   );

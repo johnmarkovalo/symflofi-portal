@@ -8,10 +8,10 @@ function TierBadge({ tier }: { tier: string }) {
     enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
     pro: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     lite: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    trial: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+    demo: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
   };
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[tier] ?? styles.trial}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[tier] ?? styles.demo}`}>
       {tier}
     </span>
   );

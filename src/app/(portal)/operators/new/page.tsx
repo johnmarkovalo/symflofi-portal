@@ -73,7 +73,7 @@ export default function NewOperatorPage() {
             onChange={(e) => setPlan(e.target.value)}
             className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
-            <option value="trial">Trial</option>
+            <option value="demo">Demo</option>
             <option value="lite">Lite</option>
             <option value="pro">Pro</option>
             <option value="enterprise">Enterprise</option>

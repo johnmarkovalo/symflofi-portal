@@ -41,20 +41,29 @@ const hardware = [
 
 const plans = [
   {
-    name: "Trial",
+    name: "Demo",
     price: "Free",
     period: "",
-    description: "Get started and test SymfloFi on your device",
-    features: ["5 user limit", "Basic bandwidth control", "Coin slot support", "Community support"],
+    description: "Try SymfloFi with no commitment",
+    features: ["3 concurrent users", "5 vouchers per month", "Coin slot support", "1 day sales history", "Manual updates"],
     cta: "Get Started",
+    highlight: false,
+  },
+  {
+    name: "Lite",
+    price: "₱300",
+    period: "/year",
+    description: "Great for small setups just getting started",
+    features: ["30 concurrent users", "Coin slot support", "Voucher system", "30 days sales history", "Automatic OTA updates"],
+    cta: "Get Lite License",
     highlight: false,
   },
   {
     name: "Pro",
     price: "₱500",
     period: "/year",
-    description: "For operators running a small WiFi vending business",
-    features: ["50 user limit", "SQM bandwidth shaping", "GCash & Maya payments", "Voucher system", "Remote monitoring", "Email support"],
+    description: "For operators running a growing WiFi business",
+    features: ["100 concurrent users", "GCash & Maya payments", "Cloud dashboard & monitoring", "Session roaming", "Unlimited sales history", "Automatic OTA updates"],
     cta: "Get Pro License",
     highlight: true,
   },
@@ -63,7 +72,7 @@ const plans = [
     price: "₱1,500",
     period: "/year",
     description: "Unlimited scale for serious operators and distributors",
-    features: ["Unlimited users", "Unlimited sub-accounts", "All payment methods", "Custom portal theming", "Priority support", "Multi-VLAN auto-select"],
+    features: ["Unlimited concurrent users", "All payment methods", "Cloud dashboard & monitoring", "Session roaming", "Sub-vendor accounts", "Unlimited sales history", "Priority support"],
     cta: "Get Enterprise",
     highlight: false,
   },
@@ -105,6 +114,7 @@ export default function LandingPage() {
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#hardware" className="hover:text-foreground transition-colors">Hardware</a>
             <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+            <Link href="/downloads" className="hover:text-foreground transition-colors">Downloads</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/signin" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -240,7 +250,7 @@ export default function LandingPage() {
             Start free, upgrade when you are ready. All plans include OTA firmware updates.
           </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -343,6 +353,7 @@ export default function LandingPage() {
               <ul className="space-y-2">
                 <li><Link href="/signup" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Get Started</Link></li>
                 <li><Link href="/signin" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Operator Portal</Link></li>
+                <li><Link href="/downloads" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Downloads</Link></li>
               </ul>
             </div>
             <div>
