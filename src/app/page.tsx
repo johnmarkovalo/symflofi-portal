@@ -136,7 +136,7 @@ export default function LandingPage() {
           <div className="animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Open Source WiFi Vending System
+              Cloud-Managed WiFi Vending System
             </div>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.1] animate-fade-in-up delay-100">
@@ -148,7 +148,7 @@ export default function LandingPage() {
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
             Cloud-connected WiFi vending with built-in remote monitoring, e-payments,
-            bandwidth control, and license management. Built on ImmortalWrt.
+            bandwidth control, and license management.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
             <Link
@@ -239,6 +239,17 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+        <div className="text-center mt-10">
+          <Link
+            href="/downloads"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download Firmware
+          </Link>
         </div>
       </section>
 
@@ -337,7 +348,7 @@ export default function LandingPage() {
                 <span className="text-sm font-bold">SymfloFi</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Open source WiFi vending system built on ImmortalWrt. Cloud-managed, coin-operated.
+                Cloud-managed WiFi vending platform.
               </p>
             </div>
             <div>
@@ -356,15 +367,9 @@ export default function LandingPage() {
                 <li><Link href="/downloads" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Downloads</Link></li>
               </ul>
             </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Connect</h4>
-              <ul className="space-y-2">
-                <li><a href="https://github.com/johnmarkovalo/symflofi" target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground transition-colors">GitHub</a></li>
-              </ul>
-            </div>
           </div>
           <div className="border-t border-border/50 mt-10 pt-6 text-center">
-            <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} SymfloFi. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} <a href="https://symflo.dev" className="hover:text-foreground transition-colors">SymfloFi</a>. All rights reserved.</p>
           </div>
         </div>
       </footer>
