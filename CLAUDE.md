@@ -45,6 +45,19 @@ src/
 - **Supabase RLS:** Database access is scoped by Row Level Security. The server client uses cookies for auth context.
 - **Styling convention:** Dark theme with oklch color gradients, backdrop blur, rounded-2xl cards. Uses Tailwind CSS utility classes only (no component library).
 
+## Database & Migrations (CRITICAL)
+
+This project is the **single source of truth** for all Supabase database schema, migrations, RPC functions, and Edge Functions. The device firmware project (SymfloFi) is a read-only API client — it NEVER defines or modifies cloud database objects.
+
+- All SQL migrations live in `supabase/` (numbered: `001-*.sql`, `002-*.sql`, etc.)
+- All Edge Functions live in `supabase/functions/`
+- All RPC functions (`generate_license_key`, `validate_license`, etc.) are defined here
+- Table schema: `license_keys`, `machines`, `operators`, `cloud_sessions`, `sales_reports`, etc.
+
+**Key table: `license_keys`** — has `duration_days` (integer), NOT `expires_at`. Expiry is computed as `created_at + duration_days`.
+
+**NEVER create database migrations, RPC functions, or Edge Functions in the SymfloFi device repo.** If the device needs a new cloud endpoint, the change goes here.
+
 ## Commands
 
 ```bash
