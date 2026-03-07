@@ -170,7 +170,7 @@ export default async function DownloadsPage() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Released {latestRelease.date} &middot; Based on ImmortalWrt 24.10.5
+                    Released {latestRelease.date}
                   </p>
                 </div>
               </div>
