@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const VPS_API_URL = Deno.env.get("VPS_API_URL") || "http://api.symflofi.cloud";
+const VPS_API_KEY = Deno.env.get("VPS_API_KEY") || "";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -17,7 +20,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { machine_uuid, license_key } = await req.json();
+    const { machine_uuid, license_key, wg_public_key } = await req.json();
 
     if (!machine_uuid || !license_key) {
       return new Response(
@@ -28,7 +31,7 @@ serve(async (req) => {
 
     const { data: machine, error } = await supabase
       .from("machines")
-      .select("id, machine_uuid")
+      .select("id, machine_uuid, wg_public_key, wg_ip")
       .eq("license_key", license_key)
       .eq("machine_uuid", machine_uuid)
       .single();
@@ -40,16 +43,56 @@ serve(async (req) => {
       );
     }
 
+    // Update last seen
+    const updateData: Record<string, unknown> = {
+      last_seen_at: new Date().toISOString(),
+      is_online: true,
+    };
+
+    // Handle WireGuard peer provisioning
+    let wgIp = machine.wg_ip;
+    if (wg_public_key && VPS_API_KEY) {
+      const keyChanged = wg_public_key !== machine.wg_public_key;
+      const notProvisioned = !machine.wg_ip;
+
+      if (keyChanged || notProvisioned) {
+        // Provision peer on VPS
+        try {
+          const vpsResp = await fetch(`${VPS_API_URL}/api/peers`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${VPS_API_KEY}`,
+            },
+            body: JSON.stringify({
+              machineUuid: machine_uuid,
+              publicKey: wg_public_key,
+            }),
+          });
+
+          if (vpsResp.ok) {
+            const vpsData = await vpsResp.json();
+            wgIp = vpsData.ip;
+            updateData.wg_public_key = wg_public_key;
+            updateData.wg_ip = wgIp;
+            console.log(`WG peer provisioned: ${machine_uuid} → ${wgIp}`);
+          } else {
+            const errText = await vpsResp.text();
+            console.error(`VPS provisioning failed: ${errText}`);
+          }
+        } catch (err) {
+          console.error(`VPS provisioning error: ${err.message}`);
+        }
+      }
+    }
+
     await supabase
       .from("machines")
-      .update({
-        last_seen_at: new Date().toISOString(),
-        is_online: true,
-      })
+      .update(updateData)
       .eq("id", machine.id);
 
     return new Response(
-      JSON.stringify({ ok: true }),
+      JSON.stringify({ ok: true, wg_ip: wgIp || null }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
