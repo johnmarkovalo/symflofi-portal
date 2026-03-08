@@ -4,6 +4,8 @@ import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 import ActivityFeed from "@/components/activity-feed";
 
+export const dynamic = "force-dynamic";
+
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
     enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
