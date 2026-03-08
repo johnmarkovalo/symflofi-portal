@@ -19,6 +19,8 @@
 
 # production
 /build
+/deploy
+release.tar.gz
 
 # misc
 .DS_Store
