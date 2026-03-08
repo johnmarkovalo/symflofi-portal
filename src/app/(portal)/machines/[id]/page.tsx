@@ -119,7 +119,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
           </div>
           {isOnline ? (
             <a
-              href={`http://device-${machine.machine_uuid}.admin.symflofi.cloud`}
+              href={`http://device-${machine.machine_uuid}.admin.symflofi.cloud/admin/`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
