@@ -1,9 +1,8 @@
 import Link from "next/link";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bnwcbgiihizkqnegcgpe.supabase.co";
-const BUCKET = "updates";
-const MANIFEST_URL = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/manifest.json`;
-const STORAGE_BASE = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}`;
+const UPDATES_BASE = "https://api.symflofi.cloud/updates";
+const MANIFEST_URL = `${UPDATES_BASE}/manifest.json`;
+const STORAGE_BASE = UPDATES_BASE;
 
 interface FileInfo {
   url: string;
