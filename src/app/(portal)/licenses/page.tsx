@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import GenerateKeyButton from "./generate-key-button";
+import { LocalTime } from "@/components/local-time";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -98,7 +99,7 @@ export default async function LicensesPage() {
                   {lic.machine_id ? "Bound" : "Unbound"}
                 </td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(lic.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
+                  <LocalTime date={lic.created_at} dateOnly />
                 </td>
               </tr>
             ))}

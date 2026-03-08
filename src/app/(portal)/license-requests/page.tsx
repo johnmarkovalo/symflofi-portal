@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import RequestActions from "./request-actions";
+import { LocalTime } from "@/components/local-time";
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -113,7 +114,7 @@ export default async function LicenseRequestsPage() {
                   )}
                 </td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(req.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
+                  <LocalTime date={req.created_at} dateOnly />
                 </td>
                 {isAdmin && (
                   <td className="px-5 py-4">

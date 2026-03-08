@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 import ActivityFeed from "@/components/activity-feed";
+import { LocalTime } from "@/components/local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +104,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
         </div>
         {machine.last_seen_at && (
           <p className="text-sm text-muted-foreground mt-1">
-            Last seen: {new Date(machine.last_seen_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
+            Last seen: <LocalTime date={machine.last_seen_at} />
           </p>
         )}
       </div>
@@ -205,7 +206,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground/60 pt-2">
-                Updated: {new Date(health.recorded_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
+                Updated: <LocalTime date={health.recorded_at} />
               </p>
             </div>
           ) : (

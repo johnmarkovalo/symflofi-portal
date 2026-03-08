@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
+import { LocalTime } from "@/components/local-time";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -69,7 +70,7 @@ export default async function OperatorsPage() {
                 <td className="px-5 py-4"><TierBadge tier={op.plan} /></td>
                 <td className="px-5 py-4 text-muted-foreground">{op.license_keys?.[0]?.count ?? 0}</td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(op.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
+                  <LocalTime date={op.created_at} dateOnly />
                 </td>
               </tr>
             ))}

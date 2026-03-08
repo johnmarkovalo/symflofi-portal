@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
+import { LocalTime } from "@/components/local-time";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -103,7 +104,7 @@ export default async function MachinesPage() {
                   <td className="px-5 py-4 text-muted-foreground">{m.hardware || "-"}</td>
                   <td className="px-5 py-4 text-muted-foreground font-mono text-xs">{m.app_version || "-"}</td>
                   <td className="px-5 py-4 text-muted-foreground">
-                    {m.last_seen_at ? new Date(m.last_seen_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Never"}
+                    {m.last_seen_at ? <LocalTime date={m.last_seen_at} /> : "Never"}
                   </td>
                 </tr>
               );
