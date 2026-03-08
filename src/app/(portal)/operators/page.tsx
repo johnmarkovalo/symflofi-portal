@@ -30,9 +30,9 @@ export default async function OperatorsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Operators</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Operators</h1>
           <p className="text-sm text-muted-foreground mt-1">Manage operator accounts</p>
         </div>
         <Link
@@ -46,15 +46,15 @@ export default async function OperatorsPage() {
         </Link>
       </div>
 
-      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Name</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Email</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Plan</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Licenses</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Created</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Name</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Email</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Plan</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Licenses</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Created</th>
             </tr>
           </thead>
           <tbody>

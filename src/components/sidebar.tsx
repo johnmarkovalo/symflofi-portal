@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/roles";
 
@@ -40,6 +41,17 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -47,11 +59,11 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
     router.refresh();
   }
 
-  return (
-    <aside className="w-64 bg-card/50 backdrop-blur-xl border-r border-border flex flex-col min-h-screen relative">
+  const sidebarContent = (
+    <>
       <div className="absolute top-0 left-0 w-full h-32 glow-indigo pointer-events-none" />
 
-      <div className="px-6 py-5 border-b border-border relative z-10">
+      <div className="px-6 py-5 border-b border-border relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
             <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -63,9 +75,18 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
             <p className="text-[11px] text-muted-foreground">Cloud Portal</p>
           </div>
         </div>
+        {/* Close button - mobile only */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="md:hidden p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-5 relative z-10">
+      <nav className="flex-1 px-3 py-4 space-y-5 relative z-10 overflow-y-auto">
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => role && item.roles.includes(role));
           if (visibleItems.length === 0) return null;
@@ -82,6 +103,7 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
                     <Link
                       key={item.href}
                       href={item.href}
+                      onClick={() => setMobileOpen(false)}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                         active
                           ? "bg-primary/10 text-primary border border-primary/20 shadow-sm shadow-primary/10"
@@ -121,6 +143,43 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
           Sign out
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2 rounded-xl bg-card/80 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Open menu"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile sidebar (drawer) */}
+      <aside
+        className={`md:hidden fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-xl border-r border-border flex flex-col transition-transform duration-300 ease-in-out ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 bg-card/50 backdrop-blur-xl border-r border-border flex-col min-h-screen relative">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

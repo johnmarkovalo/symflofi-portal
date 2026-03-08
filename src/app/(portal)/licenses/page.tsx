@@ -59,9 +59,9 @@ export default async function LicensesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">License Keys</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">License Keys</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isAdmin ? "Generate and manage license keys" : "Your license keys"}
           </p>
@@ -69,18 +69,18 @@ export default async function LicensesPage() {
         {isAdmin && <GenerateKeyButton operators={operators} />}
       </div>
 
-      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Key</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Tier</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Key</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Tier</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Status</th>
               {isAdmin && (
-                <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Operator</th>
+                <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Operator</th>
               )}
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Machine</th>
-              <th className="text-left px-5 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider">Created</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Machine</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Created</th>
             </tr>
           </thead>
           <tbody>

@@ -83,7 +83,7 @@ export default function NewLicenseRequestPage() {
         <p className="text-sm text-muted-foreground mt-1">Request license keys from the admin</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 sm:p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tier</label>
           <select

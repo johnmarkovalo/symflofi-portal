@@ -110,7 +110,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
 
       {/* Remote Access */}
       {machine.wg_ip && machine.license_tier === "pro" && (
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 mb-6 flex items-center justify-between">
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-medium text-foreground">Remote Access</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -122,7 +122,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
               href={`http://device-${machine.machine_uuid}.admin.symflofi.cloud/admin/`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -130,7 +130,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
               Open Admin Panel
             </a>
           ) : (
-            <span className="inline-flex items-center px-4 py-2 rounded-lg bg-zinc-800 text-zinc-500 text-sm font-medium cursor-not-allowed">
+            <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-zinc-800 text-zinc-500 text-sm font-medium cursor-not-allowed">
               Device Offline
             </span>
           )}
@@ -141,7 +141,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
         {/* Machine Info */}
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 lg:col-span-2">
           <h3 className="text-sm font-medium text-foreground mb-4">Machine Info</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">UUID</p>
               <p className="text-foreground font-mono text-xs mt-0.5">{machine.machine_uuid}</p>

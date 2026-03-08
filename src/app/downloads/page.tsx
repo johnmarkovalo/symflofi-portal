@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 const UPDATES_BASE = "https://api.symflofi.cloud/updates";
@@ -39,16 +42,6 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-async function getManifest(): Promise<Manifest | null> {
-  try {
-    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
 const highlights = [
   "Captive portal that works on all devices out of the box",
   "Coin slot support with plug-and-play wiring",
@@ -73,10 +66,16 @@ const steps = [
   { step: 4, title: "Activate", description: "Open the admin panel, enter your license key, set your rates, and you're ready to earn." },
 ];
 
-export const dynamic = "force-dynamic";
+export default function DownloadsPage() {
+  const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-export default async function DownloadsPage() {
-  const manifest = await getManifest();
+  useEffect(() => {
+    fetch(MANIFEST_URL, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setManifest(data))
+      .catch(() => setManifest(null));
+  }, []);
 
   // Sort versions newest first
   const versions = manifest
@@ -109,7 +108,7 @@ export default async function DownloadsPage() {
 
       {/* Navigation */}
       <nav className="relative z-20 border-b border-border/50 backdrop-blur-xl bg-background/60">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -125,7 +124,7 @@ export default async function DownloadsPage() {
             <Link href="/downloads" className="text-foreground font-medium">Downloads</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/signin" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/signin" className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors">
               Log in
             </Link>
             <Link
@@ -134,12 +133,36 @@ export default async function DownloadsPage() {
             >
               Sign up
             </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
+            <div className="px-4 py-3 space-y-1">
+              <Link href="/#features" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Features</Link>
+              <Link href="/#hardware" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Hardware</Link>
+              <Link href="/#pricing" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Pricing</Link>
+              <Link href="/downloads" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-foreground font-medium hover:bg-muted transition-colors">Downloads</Link>
+              <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden">Log in</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Header */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 pt-20 pb-12">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-10 sm:pb-12">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-400 mb-6">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -147,10 +170,10 @@ export default async function DownloadsPage() {
             </svg>
             Firmware Downloads
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tight">
             Get the Firmware
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
             Everything you need to turn your board into a fully working Piso WiFi machine. Flash it, wire it, earn.
           </p>
         </div>
@@ -158,14 +181,14 @@ export default async function DownloadsPage() {
 
       {/* Latest Release */}
       {latestRelease && latestVersion ? (
-        <section className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
+        <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-10 sm:pb-12">
           <div className="relative rounded-2xl border border-primary/30 bg-primary/5 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/5" />
-            <div className="relative p-8">
-              <div className="flex items-center justify-between mb-6">
+            <div className="relative p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-foreground">Latest Release</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">Latest Release</h2>
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
                       v{latestVersion}
                     </span>
@@ -185,7 +208,7 @@ export default async function DownloadsPage() {
                 {Object.entries(latestRelease.bundles).map(([boardId, bundle]) => {
                   const meta = BOARD_META[boardId] || { name: boardId, arch: "Unknown", soc: "" };
                   return (
-                    <div key={boardId} className={`rounded-xl border p-5 ${meta.recommended ? "border-primary/40 bg-primary/5" : "border-border/50 bg-card/40"}`}>
+                    <div key={boardId} className={`rounded-xl border p-4 sm:p-5 ${meta.recommended ? "border-primary/40 bg-primary/5" : "border-border/50 bg-card/40"}`}>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
@@ -203,7 +226,7 @@ export default async function DownloadsPage() {
                             <p className="text-xs text-muted-foreground">{meta.arch} &middot; {meta.soc}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           {bundle.image && (
                             <a
                               href={`${STORAGE_BASE}/${bundle.image.url}`}
@@ -234,14 +257,14 @@ export default async function DownloadsPage() {
                       </div>
 
                       {/* Checksums */}
-                      <div className="mt-3 space-y-1">
+                      <div className="mt-3 space-y-1 overflow-x-auto">
                         {bundle.image && (
-                          <p className="text-[10px] text-muted-foreground/60 font-mono">
+                          <p className="text-[10px] text-muted-foreground/60 font-mono whitespace-nowrap">
                             Image SHA256: <span className="select-all">{bundle.image.sha256}</span>
                           </p>
                         )}
                         {bundle.update && (
-                          <p className="text-[10px] text-muted-foreground/60 font-mono">
+                          <p className="text-[10px] text-muted-foreground/60 font-mono whitespace-nowrap">
                             Update SHA256: <span className="select-all">{bundle.update.sha256}</span>
                           </p>
                         )}
@@ -254,7 +277,7 @@ export default async function DownloadsPage() {
           </div>
         </section>
       ) : (
-        <section className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
+        <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-10 sm:pb-12">
           <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-8 text-center">
             <p className="text-muted-foreground">No releases available yet. Check back soon.</p>
           </div>
@@ -263,13 +286,13 @@ export default async function DownloadsPage() {
 
       {/* Previous Releases */}
       {versions.length > 1 && (
-        <section className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
+        <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-10 sm:pb-12">
           <h2 className="text-lg font-bold text-foreground mb-4">Previous Releases</h2>
           <div className="space-y-3">
             {versions.slice(1).map((version) => {
               const release = manifest!.releases[version];
               return (
-                <div key={version} className="rounded-xl border border-border/50 bg-card/40 p-5">
+                <div key={version} className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-foreground">v{version}</span>
@@ -313,9 +336,9 @@ export default async function DownloadsPage() {
       )}
 
       {/* What's Inside + What You Need */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 pb-12">
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-6">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-10 sm:pb-12">
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
+          <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-5 sm:p-6">
             <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -334,7 +357,7 @@ export default async function DownloadsPage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-6">
+          <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-5 sm:p-6">
             <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
@@ -359,11 +382,11 @@ export default async function DownloadsPage() {
       </section>
 
       {/* Getting Started */}
-      <section className="relative z-10 max-w-4xl mx-auto px-6 pb-20">
-        <h2 className="text-2xl font-bold text-foreground mb-8 text-center">Getting Started</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-6 sm:mb-8 text-center">Getting Started</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
           {steps.map((s) => (
-            <div key={s.step} className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-6">
+            <div key={s.step} className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border p-4 sm:p-6">
               <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-sm font-bold text-primary mb-3">
                 {s.step}
               </div>
@@ -376,7 +399,7 @@ export default async function DownloadsPage() {
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-border/50">
-        <div className="max-w-4xl mx-auto px-6 py-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 text-center">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} SymfloFi. All rights reserved.
           </p>

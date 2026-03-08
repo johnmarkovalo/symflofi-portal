@@ -96,7 +96,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md p-6">
+      <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md mx-4 p-4 sm:p-6 sm:mx-auto">
         <h2 className="text-lg font-bold text-foreground mb-5">Generate License Keys</h2>
 
         {generatedKeys.length > 0 ? (

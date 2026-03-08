@@ -76,7 +76,7 @@ export default async function OperatorDetailPage({
         <TierBadge tier={operator.plan} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6">
           <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>

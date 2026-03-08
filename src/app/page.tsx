@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 
 const features = [
@@ -85,6 +88,8 @@ const stats = [
 ];
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Background glows */}
@@ -101,7 +106,7 @@ export default function LandingPage() {
 
       {/* Navigation */}
       <nav className="relative z-20 border-b border-border/50 backdrop-blur-xl bg-background/60">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -117,7 +122,7 @@ export default function LandingPage() {
             <Link href="/downloads" className="hover:text-foreground transition-colors">Downloads</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/signin" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/signin" className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors">
               Log in
             </Link>
             <Link
@@ -126,12 +131,38 @@ export default function LandingPage() {
             >
               Sign up
             </Link>
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
+            <div className="px-4 py-3 space-y-1">
+              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Features</a>
+              <a href="#hardware" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Hardware</a>
+              <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Pricing</a>
+              <Link href="/downloads" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Downloads</Link>
+              <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden">Log in</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-16 sm:pt-24 sm:pb-20 md:pt-32 md:pb-28">
         <div className="text-center max-w-3xl mx-auto">
           <div className="animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-6">
@@ -139,18 +170,18 @@ export default function LandingPage() {
               Cloud-Managed WiFi Vending System
             </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.1] animate-fade-in-up delay-100">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-fade-in-up delay-100">
             The Modern{" "}
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               Piso WiFi
             </span>{" "}
             Platform
           </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
+          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
             Cloud-connected WiFi vending with built-in remote monitoring, e-payments,
             bandwidth control, and license management.
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
             <Link
               href="/signup"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40"
@@ -166,11 +197,11 @@ export default function LandingPage() {
           </div>
 
           {/* Stats */}
-          <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto animate-fade-in-up delay-400">
+          <div className="mt-12 sm:mt-16 grid grid-cols-3 gap-4 sm:gap-8 max-w-lg mx-auto animate-fade-in-up delay-400">
             {stats.map((stat) => (
               <div key={stat.label}>
-                <div className="text-2xl md:text-3xl font-bold text-foreground">{stat.value}</div>
-                <div className="text-xs text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">{stat.value}</div>
+                <div className="text-[11px] sm:text-xs text-muted-foreground mt-1">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -178,18 +209,18 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold">Advanced Features</h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
+      <section id="features" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Advanced Features</h2>
+          <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
             Everything you need to run a WiFi vending business, from coin slots to cloud dashboards.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {features.map((f) => (
             <div
               key={f.title}
-              className="group p-6 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
+              className="group p-5 sm:p-6 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
             >
               <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -204,18 +235,18 @@ export default function LandingPage() {
       </section>
 
       {/* Hardware */}
-      <section id="hardware" className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold">Supported Hardware</h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
+      <section id="hardware" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Supported Hardware</h2>
+          <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
             Pre-built firmware images ready to flash. Just download, write to SD card, and boot.
           </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
           {hardware.map((hw) => (
             <div
               key={hw.name}
-              className={`relative p-6 rounded-2xl border transition-all ${
+              className={`relative p-5 sm:p-6 rounded-2xl border transition-all ${
                 hw.recommended
                   ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/10"
                   : "bg-card/60 backdrop-blur-sm border-border hover:border-primary/20"
@@ -254,20 +285,20 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold">License Plans</h2>
-          <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
+      <section id="pricing" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">License Plans</h2>
+          <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
             Start free, upgrade when you are ready. All plans include OTA firmware updates.
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative flex flex-col p-7 rounded-2xl border transition-all ${
+              className={`relative flex flex-col p-6 sm:p-7 rounded-2xl border transition-all ${
                 plan.highlight
-                  ? "bg-primary/5 border-primary/30 shadow-xl shadow-primary/10 scale-[1.02]"
+                  ? "bg-primary/5 border-primary/30 shadow-xl shadow-primary/10 sm:scale-[1.02]"
                   : "bg-card/60 backdrop-blur-sm border-border hover:border-primary/20"
               }`}
             >
@@ -308,24 +339,24 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="relative rounded-3xl border border-border overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10" />
-          <div className="relative px-8 py-16 md:px-16 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold">Ready to get started?</h2>
-            <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+          <div className="relative px-6 py-12 sm:px-8 sm:py-16 md:px-16 text-center">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Ready to get started?</h2>
+            <p className="text-muted-foreground mt-3 max-w-lg mx-auto text-sm sm:text-base">
               Sign up as an operator, flash the firmware, and start earning in minutes.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/signup"
-                className="px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
               >
                 Create Free Account
               </Link>
               <Link
                 href="/signin"
-                className="px-8 py-3.5 rounded-xl border border-border text-foreground font-semibold hover:bg-muted transition-all"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl border border-border text-foreground font-semibold hover:bg-muted transition-all"
               >
                 Sign In
               </Link>
@@ -336,8 +367,8 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-border/50 mt-10">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="grid md:grid-cols-4 gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">

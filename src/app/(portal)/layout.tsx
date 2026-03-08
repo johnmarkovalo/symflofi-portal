@@ -55,7 +55,7 @@ export default async function PortalLayout({
       </div>
 
       <Sidebar role={ctx.role} email={ctx.email} pendingRequests={pendingRequests} />
-      <main className="flex-1 p-8 relative z-10">{children}</main>
+      <main className="flex-1 p-4 pt-16 md:pt-8 md:p-8 relative z-10">{children}</main>
     </div>
   );
 }
