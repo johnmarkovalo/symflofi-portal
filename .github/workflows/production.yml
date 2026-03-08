@@ -59,9 +59,9 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r .next/standalone/* deploy/
+          mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
           cp -r public deploy/public
-          cp package.json deploy/
           tar -czf release.tar.gz -C deploy .
 
       - name: Upload release to server
