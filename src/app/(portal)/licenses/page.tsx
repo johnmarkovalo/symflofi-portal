@@ -98,7 +98,7 @@ export default async function LicensesPage() {
                   {lic.machine_id ? "Bound" : "Unbound"}
                 </td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(lic.created_at).toLocaleDateString()}
+                  {new Date(lic.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
                 </td>
               </tr>
             ))}

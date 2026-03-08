@@ -69,7 +69,7 @@ export default async function OperatorsPage() {
                 <td className="px-5 py-4"><TierBadge tier={op.plan} /></td>
                 <td className="px-5 py-4 text-muted-foreground">{op.license_keys?.[0]?.count ?? 0}</td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(op.created_at).toLocaleDateString()}
+                  {new Date(op.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
                 </td>
               </tr>
             ))}

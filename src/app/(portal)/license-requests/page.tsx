@@ -113,7 +113,7 @@ export default async function LicenseRequestsPage() {
                   )}
                 </td>
                 <td className="px-5 py-4 text-muted-foreground">
-                  {new Date(req.created_at).toLocaleDateString()}
+                  {new Date(req.created_at).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })}
                 </td>
                 {isAdmin && (
                   <td className="px-5 py-4">

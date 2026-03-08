@@ -103,7 +103,7 @@ export default async function MachinesPage() {
                   <td className="px-5 py-4 text-muted-foreground">{m.hardware || "-"}</td>
                   <td className="px-5 py-4 text-muted-foreground font-mono text-xs">{m.app_version || "-"}</td>
                   <td className="px-5 py-4 text-muted-foreground">
-                    {m.last_seen_at ? new Date(m.last_seen_at).toLocaleString() : "Never"}
+                    {m.last_seen_at ? new Date(m.last_seen_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Never"}
                   </td>
                 </tr>
               );

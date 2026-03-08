@@ -103,7 +103,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
         </div>
         {machine.last_seen_at && (
           <p className="text-sm text-muted-foreground mt-1">
-            Last seen: {new Date(machine.last_seen_at).toLocaleString()}
+            Last seen: {new Date(machine.last_seen_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
           </p>
         )}
       </div>
@@ -205,7 +205,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground/60 pt-2">
-                Updated: {new Date(health.recorded_at).toLocaleString()}
+                Updated: {new Date(health.recorded_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })}
               </p>
             </div>
           ) : (
