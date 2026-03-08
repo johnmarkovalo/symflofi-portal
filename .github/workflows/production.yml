@@ -102,7 +102,7 @@ jobs:
           $SSH "ln -sfn $DEPLOY_PATH/releases/$RELEASE $DEPLOY_PATH/current"
 
           # Restart PM2 (delete + start to update cwd to new release)
-          $SSH "pm2 delete symflofi-portal 2>/dev/null; cd $DEPLOY_PATH/current && pm2 start server.js --name symflofi-portal --cwd $DEPLOY_PATH/current && pm2 save"
+          $SSH "pm2 delete symflofi-portal 2>/dev/null; cd $DEPLOY_PATH/current && PORT=3001 HOSTNAME=127.0.0.1 pm2 start server.js --name symflofi-portal --cwd $DEPLOY_PATH/current && pm2 save"
 
           # Cleanup old releases (keep last 5)
           $SSH "cd $DEPLOY_PATH/releases && ls -1t | tail -n +6 | xargs -r rm -rf"
