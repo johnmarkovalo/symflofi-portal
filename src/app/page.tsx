@@ -185,12 +185,13 @@ export default function LandingPage() {
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
           {hardware.map((hw) => (
-            <div
+            <Link
               key={hw.name}
-              className={`relative p-5 sm:p-6 rounded-2xl border transition-all ${
+              href="/downloads"
+              className={`relative p-5 sm:p-6 rounded-2xl border transition-all cursor-pointer ${
                 hw.recommended
-                  ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/10"
-                  : "bg-card/60 backdrop-blur-sm border-border hover:border-primary/20"
+                  ? "bg-primary/5 border-primary/30 shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20"
+                  : "bg-card/60 backdrop-blur-sm border-border hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5"
               }`}
             >
               {hw.recommended && (
@@ -209,19 +210,8 @@ export default function LandingPage() {
                   <p className="text-xs text-muted-foreground">{hw.arch}</p>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
-        </div>
-        <div className="text-center mt-10">
-          <Link
-            href="/downloads"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Download Firmware
-          </Link>
         </div>
       </section>
 
