@@ -57,10 +57,27 @@ jobs:
 
       - name: Package standalone build
         run: |
+          # Find the server.js inside standalone (path varies by environment)
+          SERVER_DIR=$(find .next/standalone -name "server.js" -path "*/SymfloFi-Cloud/*" -exec dirname {} \; | head -1)
+          if [ -z "$SERVER_DIR" ]; then
+            # Fallback: server.js at root of standalone
+            SERVER_DIR=".next/standalone"
+          fi
+          echo "Standalone dir: $SERVER_DIR"
+
           mkdir -p deploy
-          cp -r .next/standalone/* deploy/
+          cp -r "$SERVER_DIR"/* deploy/
+          cp -r "$SERVER_DIR"/node_modules deploy/ 2>/dev/null || true
+
+          # Copy .next/static into the .next dir
           mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
+
+          # Copy BUILD_ID and other required .next files from standalone
+          if [ -d "$SERVER_DIR/.next" ]; then
+            cp -r "$SERVER_DIR/.next"/* deploy/.next/
+          fi
+
           [ -d public ] && cp -r public deploy/public || true
           tar -czf release.tar.gz -C deploy .
 
