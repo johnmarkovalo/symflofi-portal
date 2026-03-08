@@ -61,7 +61,7 @@ jobs:
           cp -r .next/standalone/* deploy/
           mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
-          cp -r public deploy/public
+          [ -d public ] && cp -r public deploy/public || true
           tar -czf release.tar.gz -C deploy .
 
       - name: Upload release to server
