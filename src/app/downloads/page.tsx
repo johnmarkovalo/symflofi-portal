@@ -41,7 +41,7 @@ function formatSize(bytes: number): string {
 
 async function getManifest(): Promise<Manifest | null> {
   try {
-    const res = await fetch(MANIFEST_URL, { next: { revalidate: 60 } });
+    const res = await fetch(MANIFEST_URL, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -72,6 +72,8 @@ const steps = [
   { step: 3, title: "Power on", description: "Insert the SD card, plug in the power, and wait about a minute for the system to boot up." },
   { step: 4, title: "Activate", description: "Open the admin panel, enter your license key, set your rates, and you're ready to earn." },
 ];
+
+export const dynamic = "force-dynamic";
 
 export default async function DownloadsPage() {
   const manifest = await getManifest();
