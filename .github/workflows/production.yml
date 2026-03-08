@@ -1,13 +1,9 @@
-name: Production Deployment
+name: Deploy to Production
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   lint:
@@ -26,20 +22,74 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-  deploy-production:
+  deploy:
     name: Deploy Production
     needs: lint
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm i -g vercel
-      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - run: npm ci
+
+      - name: Build Next.js (standalone)
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Set release variables
+        id: vars
+        run: echo "release=$(date +%Y%m%d%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Package standalone build
+        run: |
+          mkdir -p deploy
+          cp -r .next/standalone/* deploy/
+          cp -r .next/static deploy/.next/static
+          cp -r public deploy/public
+          cp package.json deploy/
+          tar -czf release.tar.gz -C deploy .
+
+      - name: Upload release to server
+        run: |
+          RELEASE=${{ steps.vars.outputs.release }}
+          DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}
+          SSH="ssh -i ~/.ssh/deploy_key ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}"
+
+          # Create release directory
+          $SSH "mkdir -p $DEPLOY_PATH/releases/$RELEASE"
+
+          # Upload and extract
+          scp -i ~/.ssh/deploy_key release.tar.gz \
+            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:$DEPLOY_PATH/releases/$RELEASE/
+          $SSH "cd $DEPLOY_PATH/releases/$RELEASE && tar -xzf release.tar.gz && rm release.tar.gz"
+
+          # Symlink shared .env
+          $SSH "ln -sf $DEPLOY_PATH/shared/.env $DEPLOY_PATH/releases/$RELEASE/.env"
+
+          # Switch current symlink
+          $SSH "ln -sfn $DEPLOY_PATH/releases/$RELEASE $DEPLOY_PATH/current"
+
+          # Restart PM2
+          $SSH "cd $DEPLOY_PATH/current && pm2 restart symflofi-portal --update-env || pm2 start server.js --name symflofi-portal -i 1"
+
+          # Cleanup old releases (keep last 5)
+          $SSH "cd $DEPLOY_PATH/releases && ls -1t | tail -n +6 | xargs -r rm -rf"
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

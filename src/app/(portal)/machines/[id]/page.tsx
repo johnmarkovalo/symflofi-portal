@@ -106,6 +106,35 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
         )}
       </div>
 
+      {/* Remote Access */}
+      {machine.wg_ip && machine.license_tier === "pro" && (
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-foreground">Remote Access</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Tunnel IP: <span className="font-mono">{machine.wg_ip}</span>
+            </p>
+          </div>
+          {isOnline ? (
+            <a
+              href={`http://device-${machine.machine_uuid}.admin.symflofi.cloud`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+              Open Admin Panel
+            </a>
+          ) : (
+            <span className="inline-flex items-center px-4 py-2 rounded-lg bg-zinc-800 text-zinc-500 text-sm font-medium cursor-not-allowed">
+              Device Offline
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Machine Info */}
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 lg:col-span-2">
