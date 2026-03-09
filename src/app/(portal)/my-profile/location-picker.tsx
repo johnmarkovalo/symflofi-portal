@@ -31,7 +31,7 @@ export default function LocationPicker({ latitude, longitude, onChange }: Props)
   const mapInstance = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
   const hasCoords = latitude !== null && longitude !== null;
 
