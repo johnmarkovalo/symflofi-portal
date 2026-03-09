@@ -13,7 +13,7 @@ export default async function MyProfilePage() {
 
   const { data: operator } = await supabase
     .from("operators")
-    .select("business_name, region, province, city, contact_number, facebook_url, is_listed, distributor_tier")
+    .select("business_name, region, province, city, contact_number, facebook_url, is_listed, distributor_tier, latitude, longitude")
     .eq("id", ctx.operatorId)
     .single();
 
@@ -35,6 +35,8 @@ export default async function MyProfilePage() {
           contact_number: operator?.contact_number ?? null,
           facebook_url: operator?.facebook_url ?? null,
           is_listed: operator?.is_listed ?? false,
+          latitude: operator?.latitude ?? null,
+          longitude: operator?.longitude ?? null,
         }}
       />
     </div>

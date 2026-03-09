@@ -11,6 +11,8 @@ export async function updateDistributorProfile(formData: {
   contact_number: string;
   facebook_url: string;
   is_listed: boolean;
+  latitude: number | null;
+  longitude: number | null;
 }) {
   const ctx = await getUserContext();
   if (!ctx || ctx.role !== "operator" || !ctx.operatorId || !ctx.isDistributor) {
@@ -29,6 +31,8 @@ export async function updateDistributorProfile(formData: {
       contact_number: formData.contact_number || null,
       facebook_url: formData.facebook_url || null,
       is_listed: formData.is_listed,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
     })
     .eq("id", ctx.operatorId);
 

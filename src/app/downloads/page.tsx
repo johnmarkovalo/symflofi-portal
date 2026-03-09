@@ -237,7 +237,7 @@ export default async function DownloadsPage() {
         <section className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pb-10 sm:pb-12">
           <h2 className="text-lg font-bold text-foreground mb-4">Previous Releases</h2>
           <div className="space-y-3">
-            {versions.slice(1).map((version) => {
+            {versions.slice(1, 3).map((version) => {
               const release = manifest!.releases[version];
               return (
                 <div key={version} className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5">

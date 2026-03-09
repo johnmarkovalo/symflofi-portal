@@ -14,6 +14,8 @@ type Distributor = {
   contact_number: string | null;
   facebook_url: string | null;
   distributor_tier: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 // Approximate center coordinates for Philippine regions
@@ -50,33 +52,45 @@ const tierColors: Record<string, string> = {
   gold: "#eab308",
 };
 
-function createMarkerIcon(tier: string | null) {
-  const color = tierColors[tier ?? ""] ?? "#8b5cf6";
+function createMarkerIcon(tier: string | null, state: "default" | "dimmed" | "active" = "default") {
+  const color = state === "active" ? "#8b5cf6" : tierColors[tier ?? ""] ?? "#8b5cf6";
+  const size = state === "active" ? 34 : 28;
+  const borderWidth = state === "active" ? 3 : 2;
   return L.divIcon({
     className: "",
     html: `<div style="
-      width: 28px; height: 28px;
+      width: ${size}px; height: ${size}px;
       background: ${color};
-      border: 2px solid rgba(255,255,255,0.9);
+      border: ${borderWidth}px solid rgba(255,255,255,${state === "dimmed" ? 0.3 : 0.9});
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: ${state === "active" ? `0 0 16px ${color}80, 0 2px 8px rgba(0,0,0,0.3)` : "0 2px 8px rgba(0,0,0,0.3)"};
+      opacity: ${state === "dimmed" ? 0.2 : 1};
+      transition: opacity 0.2s ease;
     "></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -28],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size],
   });
 }
 
-export default function DistributorMap({ distributors }: { distributors: Distributor[] }) {
+type Props = {
+  distributors: Distributor[];
+  highlightedId: string | null;
+  selectedId: string | null;
+};
+
+export default function DistributorMap({ distributors, highlightedId, selectedId }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
+  const markersRef = useRef<Map<string, L.Marker>>(new Map());
 
+  // Initialize map once
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [12.8797, 121.7740], // Philippines center
+      center: [12.8797, 121.7740],
       zoom: 6,
       scrollWheelZoom: false,
       zoomControl: true,
@@ -88,25 +102,33 @@ export default function DistributorMap({ distributors }: { distributors: Distrib
       maxZoom: 19,
     }).addTo(map);
 
-    // Track how many distributors per region for offset
     const regionCount: Record<string, number> = {};
 
     for (const d of distributors) {
-      const region = d.region || "Other";
-      const coords = regionCoords[region];
-      if (!coords) continue;
+      let lat: number, lng: number;
 
-      regionCount[region] = (regionCount[region] || 0);
-      const offset = getOffset(regionCount[region]);
-      regionCount[region]++;
+      if (d.latitude !== null && d.longitude !== null) {
+        lat = d.latitude;
+        lng = d.longitude;
+      } else {
+        const region = d.region || "Other";
+        const coords = regionCoords[region];
+        if (!coords) continue;
+
+        regionCount[region] = (regionCount[region] || 0);
+        const offset = getOffset(regionCount[region]);
+        regionCount[region]++;
+        lat = coords[0] + offset[0];
+        lng = coords[1] + offset[1];
+      }
 
       const marker = L.marker(
-        [coords[0] + offset[0], coords[1] + offset[1]],
+        [lat, lng],
         { icon: createMarkerIcon(d.distributor_tier) }
       ).addTo(map);
 
       const displayName = d.business_name || d.name || "SymfloFi Distributor";
-      const location = [d.city, d.province].filter(Boolean).join(", ") || region;
+      const location = [d.city, d.province].filter(Boolean).join(", ") || d.region || "Philippines";
 
       let popupHtml = `
         <div style="font-family: system-ui, sans-serif; min-width: 180px;">
@@ -127,6 +149,8 @@ export default function DistributorMap({ distributors }: { distributors: Distrib
       marker.bindPopup(popupHtml, {
         className: "distributor-popup",
       });
+
+      markersRef.current.set(d.id, marker);
     }
 
     mapInstance.current = map;
@@ -134,8 +158,46 @@ export default function DistributorMap({ distributors }: { distributors: Distrib
     return () => {
       map.remove();
       mapInstance.current = null;
+      markersRef.current.clear();
     };
   }, [distributors]);
+
+  // Update marker visibility on hover
+  useEffect(() => {
+    for (const d of distributors) {
+      const marker = markersRef.current.get(d.id);
+      if (!marker) continue;
+
+      const isActive = highlightedId === d.id;
+      const isDimmed = highlightedId !== null && !isActive;
+      const state = isActive ? "active" : isDimmed ? "dimmed" : "default";
+      marker.setIcon(createMarkerIcon(d.distributor_tier, state));
+
+      if (highlightedId === d.id) {
+        marker.setZIndexOffset(1000);
+        marker.openPopup();
+      } else {
+        marker.setZIndexOffset(0);
+        marker.closePopup();
+      }
+    }
+  }, [highlightedId, distributors]);
+
+  // Fly to selected marker
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    if (selectedId) {
+      const marker = markersRef.current.get(selectedId);
+      if (marker) {
+        const pos = marker.getLatLng();
+        map.flyTo(pos, 13, { duration: 0.8 });
+      }
+    } else {
+      map.flyTo([12.8797, 121.7740], 6, { duration: 0.8 });
+    }
+  }, [selectedId]);
 
   return (
     <>
@@ -170,7 +232,7 @@ export default function DistributorMap({ distributors }: { distributors: Distrib
       `}</style>
       <div
         ref={mapRef}
-        className="w-full h-[400px] sm:h-[500px] rounded-2xl border border-border overflow-hidden"
+        className="w-full h-[400px] lg:h-[calc(100vh-8rem)] rounded-2xl border border-border overflow-hidden"
       />
     </>
   );

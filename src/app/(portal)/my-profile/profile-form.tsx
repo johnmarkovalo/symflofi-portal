@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { updateDistributorProfile } from "./actions";
+
+const LocationPicker = dynamic(() => import("./location-picker"), { ssr: false });
 
 type ProfileData = {
   business_name: string | null;
@@ -11,6 +14,8 @@ type ProfileData = {
   contact_number: string | null;
   facebook_url: string | null;
   is_listed: boolean;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 const REGIONS = [
@@ -42,6 +47,8 @@ export default function ProfileForm({ initial }: { initial: ProfileData }) {
     contact_number: initial.contact_number ?? "",
     facebook_url: initial.facebook_url ?? "",
     is_listed: initial.is_listed ?? false,
+    latitude: initial.latitude ?? null,
+    longitude: initial.longitude ?? null,
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -177,6 +184,43 @@ export default function ProfileForm({ initial }: { initial: ProfileData }) {
             />
           </div>
         </div>
+      </div>
+
+      {/* Map pin */}
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Map Location</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Click on the map to place your pin. Drag to adjust. This is shown on the public distributor directory.
+          </p>
+        </div>
+
+        <LocationPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onChange={(lat, lng) => {
+            setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+            setSaved(false);
+          }}
+        />
+
+        {form.latitude !== null && form.longitude !== null && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground font-mono">
+              {form.latitude}, {form.longitude}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setForm((prev) => ({ ...prev, latitude: null, longitude: null }));
+                setSaved(false);
+              }}
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              Remove pin
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Save */}
