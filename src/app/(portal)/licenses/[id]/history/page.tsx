@@ -76,7 +76,7 @@ export default async function LicenseHistoryPage({
     if (entry.actor_id) operatorIds.add(entry.actor_id);
   }
 
-  let operatorMap: Record<string, { name: string | null; email: string }> = {};
+  const operatorMap: Record<string, { name: string | null; email: string }> = {};
   if (operatorIds.size > 0) {
     const { data: ops } = await supabase
       .from("operators")
