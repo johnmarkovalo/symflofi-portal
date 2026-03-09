@@ -43,7 +43,7 @@ const steps = [
   {
     step: "2",
     title: "Buy Licenses & Grow",
-    description: "Purchase licenses for your machines. Once you hit the threshold, you're automatically promoted to distributor.",
+    description: "Purchase licenses for your machines. Once you hit the threshold, you&apos;re automatically promoted to distributor.",
     icon: "M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941",
   },
   {
@@ -104,7 +104,7 @@ export default async function DistributorProgramPage() {
             </span>
           </h1>
           <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Every operator can become a distributor — no application needed. Just buy licenses, hit the threshold, and you're automatically promoted with wholesale discounts and bonus rewards.
+            Every operator can become a distributor — no application needed. Just buy licenses, hit the threshold, and you&apos;re automatically promoted with wholesale discounts and bonus rewards.
           </p>
         </div>
       </section>
