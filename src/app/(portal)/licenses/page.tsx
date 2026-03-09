@@ -2,34 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import GenerateKeyButton from "./generate-key-button";
-import { LocalTime } from "@/components/local-time";
-import Link from "next/link";
-
-function TierBadge({ tier }: { tier: string }) {
-  const styles: Record<string, string> = {
-    enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    pro: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    lite: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    demo: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-  };
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[tier] ?? styles.demo}`}>
-      {tier}
-    </span>
-  );
-}
-
-function StatusBadge({ activated }: { activated: boolean }) {
-  return activated ? (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-      activated
-    </span>
-  ) : (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border bg-amber-500/10 text-amber-400 border-amber-500/20">
-      unbound
-    </span>
-  );
-}
+import LicenseTable from "./license-table";
 
 export default async function LicensesPage() {
   const ctx = await getUserContext();
@@ -48,6 +21,17 @@ export default async function LicensesPage() {
   }
 
   const { data: licenses } = await query;
+
+  // Check if operator is a distributor
+  let isDistributor = false;
+  if (!isAdmin && ctx.operatorId) {
+    const { data: op } = await supabase
+      .from("operators")
+      .select("is_distributor")
+      .eq("id", ctx.operatorId)
+      .single();
+    isDistributor = op?.is_distributor ?? false;
+  }
 
   // Only admins can generate keys
   let operators: { id: string; name: string | null; email: string }[] = [];
@@ -71,64 +55,12 @@ export default async function LicensesPage() {
         {isAdmin && <GenerateKeyButton operators={operators} />}
       </div>
 
-      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-x-auto">
-        <table className="w-full text-sm min-w-[600px]">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Key</th>
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Tier</th>
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Status</th>
-              {isAdmin && (
-                <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Operator</th>
-              )}
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Machine</th>
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Created</th>
-              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {licenses?.map((lic) => (
-              <tr key={lic.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                <td className="px-5 py-4 font-mono text-sm text-foreground">{lic.key}</td>
-                <td className="px-5 py-4"><TierBadge tier={lic.tier} /></td>
-                <td className="px-5 py-4"><StatusBadge activated={lic.is_activated} /></td>
-                {isAdmin && (
-                  <td className="px-5 py-4 text-muted-foreground">
-                    {lic.operators?.name || lic.operators?.email || "-"}
-                  </td>
-                )}
-                <td className="px-5 py-4">
-                  {lic.machines ? (
-                    <Link href={`/machines/${lic.machines.id}`} className="text-primary hover:text-primary/80 font-mono text-xs transition-colors">
-                      {lic.machines.name || lic.machines.machine_uuid.slice(0, 12)}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">Unbound</span>
-                  )}
-                </td>
-                <td className="px-5 py-4 text-muted-foreground">
-                  <LocalTime date={lic.created_at} dateOnly />
-                </td>
-                <td className="px-5 py-4">
-                  <Link
-                    href={`/licenses/${lic.id}`}
-                    className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-                  >
-                    Info
-                  </Link>
-                </td>
-              </tr>
-            ))}
-            {(!licenses || licenses.length === 0) && (
-              <tr>
-                <td colSpan={isAdmin ? 7 : 6} className="px-5 py-12 text-center text-muted-foreground">
-                  No license keys yet
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <LicenseTable
+        licenses={(licenses ?? []) as Parameters<typeof LicenseTable>[0]["licenses"]}
+        isAdmin={isAdmin}
+        isDistributor={isDistributor}
+        operatorId={ctx.operatorId ?? null}
+      />
     </div>
   );
 }
