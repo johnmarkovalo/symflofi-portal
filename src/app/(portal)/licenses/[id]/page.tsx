@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
+import OperatorAssign from "./operator-assign";
 
 const eventLabels: Record<string, string> = {
   created: "Created",
@@ -34,9 +35,16 @@ const eventIcons: Record<string, string> = {
   purchased: "M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z",
 };
 
+const tierStyles: Record<string, string> = {
+  enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  pro: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  lite: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  demo: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+};
+
 export const dynamic = "force-dynamic";
 
-export default async function LicenseHistoryPage({
+export default async function LicenseInfoPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -46,19 +54,41 @@ export default async function LicenseHistoryPage({
 
   const { id } = await params;
   const supabase = await createClient();
+  const isAdmin = ctx.role === "admin";
 
   // Get the license key
   const { data: license } = await supabase
     .from("license_keys")
-    .select("*, operators(name, email)")
+    .select("*, operators(id, name, email)")
     .eq("id", id)
     .single();
 
   if (!license) notFound();
 
-  // Non-admin can only see their own license history
-  if (ctx.role !== "admin" && license.operator_id !== ctx.operatorId) {
+  // Non-admin can only see their own license
+  if (!isAdmin && license.operator_id !== ctx.operatorId) {
     redirect("/licenses");
+  }
+
+  // Get the machine bound to this license
+  let machine: { id: string; machine_uuid: string; name: string | null } | null = null;
+  if (license.machine_id) {
+    const { data } = await supabase
+      .from("machines")
+      .select("id, machine_uuid, name")
+      .eq("id", license.machine_id)
+      .single();
+    machine = data;
+  }
+
+  // Get all operators for assignment dropdown (admin only)
+  let operators: { id: string; name: string | null; email: string }[] = [];
+  if (isAdmin) {
+    const { data } = await supabase
+      .from("operators")
+      .select("id, name, email")
+      .order("name");
+    operators = data ?? [];
   }
 
   // Get audit log
@@ -68,7 +98,7 @@ export default async function LicenseHistoryPage({
     .eq("license_key_id", id)
     .order("created_at", { ascending: false });
 
-  // Fetch operator names for display
+  // Fetch operator names for audit display
   const operatorIds = new Set<string>();
   for (const entry of auditLog ?? []) {
     if (entry.from_operator_id) operatorIds.add(entry.from_operator_id);
@@ -87,18 +117,11 @@ export default async function LicenseHistoryPage({
     }
   }
 
-  function getOperatorLabel(id: string | null) {
-    if (!id) return null;
-    const op = operatorMap[id];
-    return op ? (op.name || op.email) : id.slice(0, 8);
+  function getOperatorLabel(opId: string | null) {
+    if (!opId) return null;
+    const op = operatorMap[opId];
+    return op ? (op.name || op.email) : opId.slice(0, 8);
   }
-
-  const tierStyles: Record<string, string> = {
-    enterprise: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    pro: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    lite: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    demo: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-  };
 
   return (
     <div>
@@ -110,14 +133,14 @@ export default async function LicenseHistoryPage({
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground font-mono">{license.key}</h1>
-          <p className="text-sm text-muted-foreground mt-1">License history &amp; audit trail</p>
+          <p className="text-sm text-muted-foreground mt-1">License details</p>
         </div>
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${tierStyles[license.tier] ?? tierStyles.demo}`}>
           {license.tier}
         </span>
       </div>
 
-      {/* License info */}
+      {/* License info cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
@@ -129,18 +152,32 @@ export default async function LicenseHistoryPage({
             )}
           </p>
         </div>
-        <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Owner</p>
-          <p className="text-sm font-medium text-foreground mt-1 truncate">
-            {license.operators?.name || license.operators?.email || "Unassigned"}
-          </p>
-        </div>
-        <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">Machine</p>
-          <p className="text-sm font-medium text-foreground mt-1">
-            {license.machine_id ? "Bound" : "Unbound"}
-          </p>
-        </div>
+        {license.operators?.id ? (
+          <Link href={`/operators/${license.operators.id}`} className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4 hover:border-primary/30 transition-all group">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Owner</p>
+            <p className="text-sm font-medium text-primary mt-1 group-hover:text-primary/80 truncate">
+              {license.operators.name || license.operators.email}
+            </p>
+          </Link>
+        ) : (
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Owner</p>
+            <p className="text-sm font-medium text-amber-400 mt-1">Unassigned</p>
+          </div>
+        )}
+        {machine ? (
+          <Link href={`/machines/${machine.id}`} className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4 hover:border-primary/30 transition-all group">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Machine</p>
+            <p className="text-sm font-medium text-primary mt-1 group-hover:text-primary/80 truncate">
+              {machine.name || machine.machine_uuid.slice(0, 12)}
+            </p>
+          </Link>
+        ) : (
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Machine</p>
+            <p className="text-sm font-medium text-amber-400 mt-1">Unbound</p>
+          </div>
+        )}
         <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Created</p>
           <p className="text-sm font-medium text-foreground mt-1">
@@ -148,6 +185,23 @@ export default async function LicenseHistoryPage({
           </p>
         </div>
       </div>
+
+      {/* Operator assignment (admin only) */}
+      {isAdmin && (
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 sm:p-6 mb-8">
+          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+            <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Assign Operator
+          </h2>
+          <OperatorAssign
+            licenseId={license.id}
+            currentOperatorId={license.operator_id}
+            operators={operators}
+          />
+        </div>
+      )}
 
       {/* Audit timeline */}
       <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 sm:p-6">
@@ -173,7 +227,7 @@ export default async function LicenseHistoryPage({
                   </div>
 
                   {/* Content */}
-                  <div className={`pb-6 flex-1 ${isLast ? "" : ""}`}>
+                  <div className={`pb-6 flex-1`}>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-medium ${color.split(" ")[0]}`}>
                         {eventLabels[entry.event] ?? entry.event}

@@ -40,7 +40,7 @@ export default async function LicensesPage() {
 
   let query = supabase
     .from("license_keys")
-    .select("*, operators(name, email)")
+    .select("*, operators(name, email), machines(id, machine_uuid, name)")
     .order("created_at", { ascending: false });
 
   if (!isAdmin && ctx.operatorId) {
@@ -97,18 +97,24 @@ export default async function LicensesPage() {
                     {lic.operators?.name || lic.operators?.email || "-"}
                   </td>
                 )}
-                <td className="px-5 py-4 text-muted-foreground font-mono text-xs">
-                  {lic.machine_id ? "Bound" : "Unbound"}
+                <td className="px-5 py-4">
+                  {lic.machines ? (
+                    <Link href={`/machines/${lic.machines.id}`} className="text-primary hover:text-primary/80 font-mono text-xs transition-colors">
+                      {lic.machines.name || lic.machines.machine_uuid.slice(0, 12)}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">Unbound</span>
+                  )}
                 </td>
                 <td className="px-5 py-4 text-muted-foreground">
                   <LocalTime date={lic.created_at} dateOnly />
                 </td>
                 <td className="px-5 py-4">
                   <Link
-                    href={`/licenses/${lic.id}/history`}
+                    href={`/licenses/${lic.id}`}
                     className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                   >
-                    History
+                    Info
                   </Link>
                 </td>
               </tr>

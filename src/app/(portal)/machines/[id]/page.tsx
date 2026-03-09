@@ -60,6 +60,17 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
     notFound();
   }
 
+  // Look up license ID for linking
+  let licenseId: string | null = null;
+  if (machine.license_key) {
+    const { data: lic } = await supabase
+      .from("license_keys")
+      .select("id")
+      .eq("key", machine.license_key)
+      .single();
+    licenseId = lic?.id ?? null;
+  }
+
   const [healthRes, activitiesRes] = await Promise.all([
     supabase
       .from("machine_health")
@@ -175,7 +186,13 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
             )}
             <div>
               <p className="text-muted-foreground">License Key</p>
-              <p className="text-foreground font-mono text-xs mt-0.5">{machine.license_key || "-"}</p>
+              {licenseId ? (
+                <Link href={`/licenses/${licenseId}`} className="text-primary hover:text-primary/80 font-mono text-xs mt-0.5 block transition-colors">
+                  {machine.license_key}
+                </Link>
+              ) : (
+                <p className="text-foreground font-mono text-xs mt-0.5">{machine.license_key || "-"}</p>
+              )}
             </div>
           </div>
         </div>

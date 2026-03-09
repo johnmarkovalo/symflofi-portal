@@ -104,15 +104,15 @@ export default async function OperatorDetailPage({
           {licenses && licenses.length > 0 ? (
             <div className="space-y-2">
               {licenses.map((lic) => (
-                <div key={lic.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                  <Link href={`/licenses/${lic.id}/history`} className="font-mono text-sm text-foreground hover:text-primary transition-colors">
+                <Link key={lic.id} href={`/licenses/${lic.id}`} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors">
+                  <span className="font-mono text-sm text-foreground">
                     {lic.key}
-                  </Link>
+                  </span>
                   <div className="flex items-center gap-2">
                     <TierBadge tier={lic.tier} />
-                    <StatusBadge status={lic.status} />
+                    <StatusBadge status={lic.is_activated ? "active" : "unbound"} />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -134,7 +134,7 @@ export default async function OperatorDetailPage({
                 const isOnline = m.last_seen_at &&
                   new Date(m.last_seen_at).getTime() > now - 5 * 60 * 1000;
                 return (
-                  <div key={m.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                  <Link key={m.id} href={`/machines/${m.id}`} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors">
                     <div>
                       <p className="text-sm font-medium text-foreground">{m.name || m.machine_uuid.slice(0, 16)}</p>
                       <p className="text-xs text-muted-foreground">{m.hardware || "Unknown hardware"}</p>
@@ -143,7 +143,7 @@ export default async function OperatorDetailPage({
                       <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-zinc-600"}`} />
                       {isOnline ? "Online" : "Offline"}
                     </span>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PublicNav from "@/components/public-nav";
 import { createClient } from "@/lib/supabase/server";
+import MapWrapper from "./map-wrapper";
 
 type Distributor = {
   id: string;
@@ -67,6 +68,13 @@ export default async function DistributorDirectoryPage() {
             Find an authorized SymfloFi distributor near you. Purchase licenses, get support, and start your piso WiFi business.
           </p>
         </div>
+
+        {/* Map */}
+        {(distributors ?? []).length > 0 && (
+          <div className="mb-12">
+            <MapWrapper distributors={(distributors ?? []) as Distributor[]} />
+          </div>
+        )}
 
         {regions.length > 0 ? (
           <div className="space-y-10">
