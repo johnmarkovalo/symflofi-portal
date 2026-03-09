@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import StatCard from "@/components/stat-card";
 import ActivityFeed from "@/components/activity-feed";
+import OperatorCodeChip from "@/components/operator-code-chip";
 
 export default async function DashboardPage() {
   const ctx = await getUserContext();
@@ -75,9 +76,12 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your SymfloFi overview</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Your SymfloFi overview</p>
+        </div>
+        {ctx.operatorCode && <OperatorCodeChip code={ctx.operatorCode} />}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

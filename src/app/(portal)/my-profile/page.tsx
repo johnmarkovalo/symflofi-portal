@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getUserContext } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
+import OperatorCodeChip from "@/components/operator-code-chip";
 
 export default async function MyProfilePage() {
   const ctx = await getUserContext();
@@ -20,7 +21,10 @@ export default async function MyProfilePage() {
   return (
     <div className="flex-1 p-4 sm:p-8 max-w-3xl mx-auto w-full">
       <div className="mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Distributor Profile</h1>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Distributor Profile</h1>
+          {ctx.operatorCode && <OperatorCodeChip code={ctx.operatorCode} />}
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           Manage your public profile shown on the distributor directory.
         </p>
