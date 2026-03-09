@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function PublicNav({ activePage }: { activePage?: "downloads" }) {
+export default function PublicNav({ activePage }: { activePage?: "downloads" | "distributors" }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -22,6 +22,7 @@ export default function PublicNav({ activePage }: { activePage?: "downloads" }) 
           <Link href="/#hardware" className="hover:text-foreground transition-colors">Hardware</Link>
           <Link href="/#pricing" className="hover:text-foreground transition-colors">Pricing</Link>
           <Link href="/downloads" className={activePage === "downloads" ? "text-foreground font-medium" : "hover:text-foreground transition-colors"}>Downloads</Link>
+          <Link href="/distributors" className={activePage === "distributors" ? "text-foreground font-medium" : "hover:text-foreground transition-colors"}>Distributors</Link>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/signin" className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -55,6 +56,7 @@ export default function PublicNav({ activePage }: { activePage?: "downloads" }) 
             <Link href="/#hardware" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Hardware</Link>
             <Link href="/#pricing" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">Pricing</Link>
             <Link href="/downloads" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm hover:bg-muted transition-colors ${activePage === "downloads" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}>Downloads</Link>
+            <Link href="/distributors" onClick={() => setMobileMenuOpen(false)} className={`block px-3 py-2.5 rounded-lg text-sm hover:bg-muted transition-colors ${activePage === "distributors" ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground"}`}>Distributors</Link>
             <Link href="/signin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden">Log in</Link>
           </div>
         </div>

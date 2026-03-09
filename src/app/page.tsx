@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PublicNav from "@/components/public-nav";
+import { createClient } from "@/lib/supabase/server";
 
 const features = [
   {
@@ -40,44 +41,40 @@ const hardware = [
   { name: "Raspberry Pi 3/4", arch: "ARM64 · Broadcom", recommended: false },
 ];
 
-const plans = [
-  {
-    name: "Demo",
-    price: "Free",
-    period: "",
-    description: "Try SymfloFi with no commitment",
-    features: ["3 concurrent users", "5 vouchers per month", "Coin slot support", "1 day sales history", "Manual updates"],
-    cta: "Get Started",
-    highlight: false,
-  },
-  {
-    name: "Lite",
-    price: "₱300",
-    period: "/year",
-    description: "Great for small setups just getting started",
-    features: ["30 concurrent users", "Coin slot support", "Voucher system", "30 days sales history", "Automatic OTA updates"],
-    cta: "Get Lite License",
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: "₱500",
-    period: "/year",
-    description: "For operators running a growing WiFi business",
-    features: ["100 concurrent users", "PPPoE subscriber plans", "Cloud dashboard & monitoring", "Unlimited sales history", "Automatic OTA updates"],
-    cta: "Get Pro License",
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    price: "₱1,500",
-    period: "/year",
-    description: "Unlimited scale for serious operators and distributors",
-    features: ["Unlimited concurrent users", "PPPoE subscriber plans", "Cloud dashboard & monitoring", "Sub-vendor accounts", "Unlimited sales history", "Priority support"],
-    cta: "Get Enterprise",
-    highlight: false,
-  },
-];
+type LicenseTier = {
+  name: string;
+  label: string;
+  price_cents: number;
+  duration_days: number;
+  max_concurrent_users: number | null;
+  max_vouchers_per_month: number | null;
+  max_sub_vendos: number;
+  epayment_enabled: boolean;
+  cloud_dashboard: boolean;
+  remote_access: boolean;
+  pppoe_enabled: boolean;
+  sales_history_days: number;
+  is_highlighted: boolean;
+  support_level: string;
+};
+
+function formatTierPrice(cents: number) {
+  if (cents === 0) return "Free";
+  return `₱${(cents / 100).toLocaleString()}`;
+}
+
+function buildFeatureList(tier: LicenseTier): string[] {
+  const features: string[] = [];
+  const users = tier.max_concurrent_users;
+  features.push(users === null || users === -1 ? "Unlimited concurrent users" : `${users} concurrent users`);
+  if (tier.pppoe_enabled) features.push("PPPoE subscriber plans");
+  if (tier.cloud_dashboard) features.push("Cloud dashboard & monitoring");
+  if (tier.max_sub_vendos !== 0) features.push(tier.max_sub_vendos === -1 ? "Sub-vendor accounts" : `${tier.max_sub_vendos} sub-vendors`);
+  const hist = tier.sales_history_days;
+  features.push(hist === -1 ? "Unlimited sales history" : `${hist} day${hist !== 1 ? "s" : ""} sales history`);
+  if (tier.support_level === "priority") features.push("Priority support");
+  return features;
+}
 
 const stats = [
   { value: "500+", label: "Active Machines" },
@@ -85,7 +82,23 @@ const stats = [
   { value: "99.9%", label: "Uptime" },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: tiers } = await supabase
+    .from("license_tiers")
+    .select("*")
+    .eq("is_public", true)
+    .order("sort_order", { ascending: true });
+
+  const plans = (tiers ?? []).map((tier: LicenseTier) => ({
+    name: tier.label,
+    price: formatTierPrice(tier.price_cents),
+    period: tier.price_cents > 0 && tier.duration_days === 365 ? "/year" : tier.price_cents > 0 ? `/${tier.duration_days}d` : "",
+    features: buildFeatureList(tier),
+    cta: tier.price_cents === 0 ? "Get Started" : `Get ${tier.label} License`,
+    highlight: tier.is_highlighted,
+  }));
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Background glows */}
@@ -239,7 +252,6 @@ export default function LandingPage() {
                 </div>
               )}
               <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
               <div className="mt-5 mb-6">
                 <span className="text-3xl font-bold text-foreground">{plan.price}</span>
                 {plan.period && <span className="text-sm text-muted-foreground">{plan.period}</span>}

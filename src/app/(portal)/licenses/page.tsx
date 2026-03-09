@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import GenerateKeyButton from "./generate-key-button";
 import { LocalTime } from "@/components/local-time";
+import Link from "next/link";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -82,6 +83,7 @@ export default async function LicensesPage() {
               )}
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Machine</th>
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Created</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5"></th>
             </tr>
           </thead>
           <tbody>
@@ -101,11 +103,19 @@ export default async function LicensesPage() {
                 <td className="px-5 py-4 text-muted-foreground">
                   <LocalTime date={lic.created_at} dateOnly />
                 </td>
+                <td className="px-5 py-4">
+                  <Link
+                    href={`/licenses/${lic.id}/history`}
+                    className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                  >
+                    History
+                  </Link>
+                </td>
               </tr>
             ))}
             {(!licenses || licenses.length === 0) && (
               <tr>
-                <td colSpan={isAdmin ? 6 : 5} className="px-5 py-12 text-center text-muted-foreground">
+                <td colSpan={isAdmin ? 7 : 6} className="px-5 py-12 text-center text-muted-foreground">
                   No license keys yet
                 </td>
               </tr>

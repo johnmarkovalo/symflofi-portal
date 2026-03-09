@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
+import DistributorToggle from "./distributor-toggle";
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: Record<string, string> = {
@@ -73,7 +74,23 @@ export default async function OperatorDetailPage({
           <h1 className="text-2xl font-bold text-foreground">{operator.name || "Unnamed"}</h1>
           <p className="text-sm text-muted-foreground">{operator.email}</p>
         </div>
-        <TierBadge tier={operator.plan} />
+        <div className="flex items-center gap-2">
+          {operator.is_distributor && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+              distributor
+            </span>
+          )}
+          <TierBadge tier={operator.plan} />
+        </div>
+      </div>
+
+      {/* Distributor toggle */}
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 mb-6">
+        <DistributorToggle
+          operatorId={operator.id}
+          isDistributor={operator.is_distributor ?? false}
+          distributorTier={operator.distributor_tier}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -88,7 +105,9 @@ export default async function OperatorDetailPage({
             <div className="space-y-2">
               {licenses.map((lic) => (
                 <div key={lic.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-                  <span className="font-mono text-sm text-foreground">{lic.key}</span>
+                  <Link href={`/licenses/${lic.id}/history`} className="font-mono text-sm text-foreground hover:text-primary transition-colors">
+                    {lic.key}
+                  </Link>
                   <div className="flex items-center gap-2">
                     <TierBadge tier={lic.tier} />
                     <StatusBadge status={lic.status} />

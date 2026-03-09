@@ -11,6 +11,7 @@ type NavItem = {
   href: string;
   icon: string;
   roles: UserRole[];
+  requireDistributor?: boolean;
   badge?: number;
 };
 
@@ -32,12 +33,36 @@ const navSections: NavSection[] = [
     section: "Licensing",
     items: [
       { label: "Licenses", href: "/licenses", icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", roles: ["admin", "operator"] },
-      { label: "License Requests", href: "/license-requests", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", roles: ["admin", "operator"] },
+      { label: "License Requests", href: "/license-requests", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", roles: ["admin", "operator"], requireDistributor: true },
+      { label: "Transfer License", href: "/licenses/transfer", icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5", roles: ["operator"], requireDistributor: true },
+    ],
+  },
+  {
+    section: "Profile",
+    items: [
+      { label: "Distributor Profile", href: "/my-profile", icon: "M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z", roles: ["operator"], requireDistributor: true },
+    ],
+  },
+  {
+    section: "Settings",
+    items: [
+      { label: "License Tiers", href: "/license-tiers", icon: "M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z", roles: ["admin"] },
+      { label: "Distributor Tiers", href: "/distributor-tiers", icon: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zm0 9.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z", roles: ["admin"] },
     ],
   },
 ];
 
-export default function Sidebar({ role, email, pendingRequests }: { role: UserRole; email: string; pendingRequests?: number }) {
+export default function Sidebar({
+  role,
+  email,
+  pendingRequests,
+  isDistributor,
+}: {
+  role: UserRole;
+  email: string;
+  pendingRequests?: number;
+  isDistributor?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -88,7 +113,15 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
 
       <nav className="flex-1 px-3 py-4 space-y-5 relative z-10 overflow-y-auto">
         {navSections.map((section) => {
-          const visibleItems = section.items.filter((item) => role && item.roles.includes(role));
+          const visibleItems = section.items.filter((item) => {
+            if (!role || !item.roles.includes(role)) return false;
+            // Items requiring distributor: visible to admin always, to operators only if isDistributor
+            if (item.requireDistributor) {
+              if (role === "admin") return true;
+              return !!isDistributor;
+            }
+            return true;
+          });
           if (visibleItems.length === 0) return null;
           return (
             <div key={section.section}>
@@ -131,7 +164,14 @@ export default function Sidebar({ role, email, pendingRequests }: { role: UserRo
       <div className="px-3 py-4 border-t border-border relative z-10 space-y-2">
         <div className="px-3 py-1">
           <p className="text-xs text-muted-foreground truncate">{email}</p>
-          <p className="text-[11px] text-muted-foreground/60 capitalize">{role}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] text-muted-foreground/60 capitalize">{role}</p>
+            {isDistributor && (
+              <span className="text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded-md font-medium">
+                distributor
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleLogout}

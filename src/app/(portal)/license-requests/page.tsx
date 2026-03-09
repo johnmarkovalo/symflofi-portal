@@ -56,7 +56,7 @@ export default async function LicenseRequestsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">License Requests</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {isAdmin ? "Review and manage license requests from operators" : "Request license keys from admin"}
+            {isAdmin ? "Review and manage license requests from distributors" : "Request bulk license keys from admin"}
           </p>
         </div>
         {!isAdmin && (

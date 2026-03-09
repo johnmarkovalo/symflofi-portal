@@ -7,6 +7,7 @@ export interface UserContext {
   userId: string;
   email: string;
   operatorId?: string;
+  isDistributor?: boolean;
 }
 
 export async function getUserContext(): Promise<UserContext | null> {
@@ -29,10 +30,10 @@ export async function getUserContext(): Promise<UserContext | null> {
     };
   }
 
-  // Check if operator
+  // Check if operator (includes distributors — they're operators with a flag)
   const { data: operators } = await supabase
     .from("operators")
-    .select("id")
+    .select("id, is_distributor")
     .eq("auth_user_id", user.id)
     .limit(1);
 
@@ -42,6 +43,7 @@ export async function getUserContext(): Promise<UserContext | null> {
       userId: user.id,
       email: user.email!,
       operatorId: operators[0].id,
+      isDistributor: operators[0].is_distributor ?? false,
     };
   }
 

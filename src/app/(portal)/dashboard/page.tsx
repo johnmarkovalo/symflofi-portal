@@ -47,7 +47,7 @@ export default async function DashboardPage() {
     );
   }
 
-  // Operator view
+  // Operator view (includes distributors — they're operators too)
   const operatorId = ctx.operatorId!;
 
   const [machinesRes, onlineMachinesRes, licensesRes, activatedRes, activities] = await Promise.all([
@@ -63,12 +63,14 @@ export default async function DashboardPage() {
     (m) => m.last_seen_at && new Date(m.last_seen_at).getTime() > now - 5 * 60 * 1000
   ).length;
   const totalMachines = machinesRes.count ?? 0;
+  const totalLicenses = licensesRes.count ?? 0;
+  const activatedCount = activatedRes.count ?? 0;
 
   const stats = [
     { label: "Machines Online", value: onlineCount, subtitle: `${totalMachines - onlineCount} offline`, icon: "M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     { label: "Total Machines", value: totalMachines, icon: "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-    { label: "License Keys", value: licensesRes.count ?? 0, subtitle: `${activatedRes.count ?? 0} activated`, icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
-    { label: "Available Keys", value: (licensesRes.count ?? 0) - (activatedRes.count ?? 0), icon: "M12 4.5v15m7.5-7.5h-15", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+    { label: "License Keys", value: totalLicenses, subtitle: `${activatedCount} activated`, icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+    { label: "Available Keys", value: totalLicenses - activatedCount, icon: "M12 4.5v15m7.5-7.5h-15", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
   ];
 
   return (

@@ -3,6 +3,8 @@ import Sidebar from "@/components/sidebar";
 import { getUserContext } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalLayout({
   children,
 }: {
@@ -54,7 +56,12 @@ export default async function PortalLayout({
           style={{ background: "linear-gradient(to top right, oklch(0.45 0.18 250), oklch(0.3 0.12 280))" }} />
       </div>
 
-      <Sidebar role={ctx.role} email={ctx.email} pendingRequests={pendingRequests} />
+      <Sidebar
+        role={ctx.role}
+        email={ctx.email}
+        pendingRequests={pendingRequests}
+        isDistributor={ctx.isDistributor}
+      />
       <main className="flex-1 p-4 pt-16 md:pt-8 md:p-8 relative z-10">{children}</main>
     </div>
   );

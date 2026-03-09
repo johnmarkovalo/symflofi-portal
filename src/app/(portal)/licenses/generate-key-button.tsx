@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
 type Operator = { id: string; name: string | null; email: string };
 type GeneratedKey = { id: string; key: string; tier: string };
+type LicenseTierOption = { name: string; label: string };
 
 export default function GenerateKeyButton({ operators }: { operators: Operator[] }) {
   const [open, setOpen] = useState(false);
   const [tier, setTier] = useState("pro");
+  const [tierOptions, setTierOptions] = useState<LicenseTierOption[]>([]);
   const [operatorId, setOperatorId] = useState("");
   const [months, setMonths] = useState(12);
   const [quantity, setQuantity] = useState(1);
@@ -17,6 +19,19 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
   const [generatedKeys, setGeneratedKeys] = useState<GeneratedKey[]>([]);
   const router = useRouter();
   const supabase = createClient();
+
+  useEffect(() => {
+    supabase
+      .from("license_tiers")
+      .select("name, label")
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setTierOptions(data);
+          setTier(data[0].name);
+        }
+      });
+  }, []);
 
   async function handleGenerate() {
     setLoading(true);
@@ -139,10 +154,9 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
                 onChange={(e) => setTier(e.target.value)}
                 className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                <option value="demo">Demo</option>
-                <option value="lite">Lite</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
+                {tierOptions.map((t) => (
+                  <option key={t.name} value={t.name}>{t.label}</option>
+                ))}
               </select>
             </div>
 
