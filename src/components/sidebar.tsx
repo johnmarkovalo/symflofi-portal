@@ -55,11 +55,13 @@ const navSections: NavSection[] = [
 export default function Sidebar({
   role,
   email,
+  operatorCode,
   pendingRequests,
   isDistributor,
 }: {
   role: UserRole;
   email: string;
+  operatorCode?: string;
   pendingRequests?: number;
   isDistributor?: boolean;
 }) {
@@ -168,6 +170,9 @@ export default function Sidebar({
               </span>
             )}
           </div>
+          {operatorCode && (
+            <p className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">{operatorCode}</p>
+          )}
         </div>
         <button
           onClick={handleLogout}

@@ -59,6 +59,7 @@ export default async function PortalLayout({
       <Sidebar
         role={ctx.role}
         email={ctx.email}
+        operatorCode={ctx.operatorCode}
         pendingRequests={pendingRequests}
         isDistributor={ctx.isDistributor}
       />

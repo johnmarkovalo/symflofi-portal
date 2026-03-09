@@ -124,14 +124,16 @@ export default function LicenseTable({
       return;
     }
 
-    // Find recipient by email or operator ID
-    const trimmed = recipient.trim().toLowerCase();
+    // Find recipient by email, operator code, or operator ID
+    const trimmed = recipient.trim();
     let recipientQuery = supabase
       .from("operators")
       .select("id, name, email");
 
     if (trimmed.includes("@")) {
-      recipientQuery = recipientQuery.eq("email", trimmed);
+      recipientQuery = recipientQuery.eq("email", trimmed.toLowerCase());
+    } else if (trimmed.toUpperCase().startsWith("SYMF-")) {
+      recipientQuery = recipientQuery.eq("operator_code", trimmed.toUpperCase());
     } else {
       recipientQuery = recipientQuery.eq("id", trimmed);
     }
@@ -332,7 +334,7 @@ export default function LicenseTable({
             <form onSubmit={handleTransfer} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1.5">
-                  Recipient Email or Operator ID
+                  Recipient Operator Code or Email
                 </label>
                 <input
                   type="text"
@@ -341,7 +343,7 @@ export default function LicenseTable({
                   required
                   autoFocus
                   className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-                  placeholder="operator@example.com or UUID"
+                  placeholder="SYMF-XX00-XXXX-XXXX or email"
                 />
               </div>
 

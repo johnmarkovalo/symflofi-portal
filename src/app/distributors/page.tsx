@@ -1,21 +1,6 @@
 import Link from "next/link";
 import PublicNav from "@/components/public-nav";
 import { createClient } from "@/lib/supabase/server";
-import DistributorDirectory from "./distributor-directory";
-
-type Distributor = {
-  id: string;
-  business_name: string | null;
-  name: string | null;
-  region: string | null;
-  province: string | null;
-  city: string | null;
-  contact_number: string | null;
-  facebook_url: string | null;
-  distributor_tier: string | null;
-  latitude: number | null;
-  longitude: number | null;
-};
 
 type DistributorTier = {
   id: string;
@@ -57,18 +42,10 @@ const steps = [
 export default async function DistributorProgramPage() {
   const supabase = await createClient();
 
-  const [{ data: distributors }, { data: tiers }] = await Promise.all([
-    supabase
-      .from("operators")
-      .select("id, business_name, name, region, province, city, contact_number, facebook_url, distributor_tier, latitude, longitude")
-      .eq("is_distributor", true)
-      .eq("is_listed", true)
-      .order("region", { ascending: true }),
-    supabase
-      .from("distributor_tiers")
-      .select("*")
-      .order("sort_order", { ascending: true }),
-  ]);
+  const { data: tiers } = await supabase
+    .from("distributor_tiers")
+    .select("*")
+    .order("sort_order", { ascending: true });
 
   const tierList = (tiers ?? []) as DistributorTier[];
 
@@ -246,18 +223,6 @@ export default async function DistributorProgramPage() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Directory */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-16 sm:pb-20">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold">Find a Distributor</h2>
-          <p className="text-muted-foreground mt-3 text-sm sm:text-base max-w-xl mx-auto">
-            Purchase licenses and get local support from an authorized SymfloFi distributor near you.
-          </p>
-        </div>
-
-        <DistributorDirectory distributors={(distributors ?? []) as Distributor[]} />
       </section>
 
       {/* CTA */}
