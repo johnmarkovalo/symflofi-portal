@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/sidebar";
+import { ToastProvider } from "@/components/toast";
 import { getUserContext } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -63,7 +64,9 @@ export default async function PortalLayout({
         pendingRequests={pendingRequests}
         isDistributor={ctx.isDistributor}
       />
-      <main className="flex-1 p-4 pt-16 md:pt-8 md:p-8 relative z-10">{children}</main>
+      <main className="flex-1 p-4 pt-16 md:pt-8 md:p-8 relative z-10">
+        <ToastProvider>{children}</ToastProvider>
+      </main>
     </div>
   );
 }

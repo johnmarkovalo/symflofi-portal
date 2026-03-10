@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useToast } from "@/components/toast";
 import { updateDistributorProfile } from "./actions";
 
 const LocationPicker = dynamic(() => import("./location-picker"), { ssr: false });
@@ -53,6 +54,7 @@ export default function ProfileForm({ initial }: { initial: ProfileData }) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   function update(field: string, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -67,8 +69,10 @@ export default function ProfileForm({ initial }: { initial: ProfileData }) {
     const result = await updateDistributorProfile(form);
 
     if (result.error) {
+      toast(result.error, "error");
       setError(result.error);
     } else {
+      toast("Profile saved");
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }

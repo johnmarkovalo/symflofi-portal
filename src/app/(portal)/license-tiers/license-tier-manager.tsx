@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type LicenseTier = {
   id: string;
@@ -61,6 +62,7 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
   const [error, setError] = useState("");
   const supabase = createClient();
   const router = useRouter();
+  const { toast } = useToast();
 
   function startEdit(tier: LicenseTier) {
     setEditing(tier.id);
@@ -93,8 +95,10 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
       .eq("id", id);
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast("Tier updated");
       setEditing(null);
       router.refresh();
     }
@@ -127,8 +131,10 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
     });
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast("Tier added");
       setAdding(false);
       router.refresh();
     }
@@ -143,8 +149,10 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
     const { error } = await supabase.from("license_tiers").delete().eq("id", id);
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast(`"${label}" tier deleted`);
       router.refresh();
     }
     setLoading(false);

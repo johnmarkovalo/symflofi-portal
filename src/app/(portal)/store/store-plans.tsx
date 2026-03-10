@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type Plan = {
   name: string;
@@ -22,6 +23,7 @@ export default function StorePlans({ plans }: { plans: Plan[] }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
 
   const cartItems = Object.values(cart).filter((i) => i.quantity > 0);
   const cartTotal = cartItems.reduce((sum, i) => sum + i.plan.priceCents * i.quantity, 0);
@@ -100,11 +102,13 @@ export default function StorePlans({ plans }: { plans: Plan[] }) {
       );
 
     if (itemsError) {
+      toast(itemsError.message, "error");
       setError(itemsError.message);
       setLoading(false);
       return;
     }
 
+    toast("Order created — redirecting to checkout");
     router.push(`/store/checkout/${order.id}`);
   }
 

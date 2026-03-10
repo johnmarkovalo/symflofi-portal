@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type DistributorTier = {
   id: string;
@@ -34,6 +35,7 @@ export default function DistributorToggle({
   const [saved, setSaved] = useState(false);
   const supabase = createClient();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase
@@ -72,8 +74,9 @@ export default function DistributorToggle({
       .eq("id", operatorId);
 
     if (error) {
-      alert(error.message);
+      toast(error.message, "error");
     } else {
+      toast("Distributor settings saved");
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }

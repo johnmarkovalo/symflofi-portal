@@ -4,8 +4,17 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ToastProvider, useToast } from "@/components/toast";
 
 export default function RegisterPage() {
+  return (
+    <ToastProvider>
+      <RegisterForm />
+    </ToastProvider>
+  );
+}
+
+function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,6 +25,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -48,6 +58,7 @@ export default function RegisterPage() {
     });
 
     if (authError) {
+      toast(authError.message, "error");
       setError(authError.message);
       setLoading(false);
       return;
@@ -82,9 +93,11 @@ export default function RegisterPage() {
 
     // If auto-confirmed, redirect to portal
     if (authData.session) {
+      toast("Account created successfully");
       router.push("/licenses");
       router.refresh();
     } else {
+      toast("Check your email to confirm your account", "info");
       setSuccess(true);
       setLoading(false);
     }

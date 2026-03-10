@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 import { revokeLicense } from "./actions";
 
 export default function RevokeLicenseButton({
@@ -18,6 +19,7 @@ export default function RevokeLicenseButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
 
   async function handleRevoke() {
     setLoading(true);
@@ -26,8 +28,10 @@ export default function RevokeLicenseButton({
     try {
       const result = await revokeLicense(licenseId, { unbindOnly });
       if (result.error) {
+        toast(result.error, "error");
         setError(result.error);
       } else {
+        toast(unbindOnly ? "Machine unbound" : "License revoked");
         setOpen(false);
         router.refresh();
       }

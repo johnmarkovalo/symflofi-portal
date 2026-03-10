@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 import { assignLicenseOperator } from "./actions";
 
 type Operator = {
@@ -24,6 +25,7 @@ export default function OperatorAssign({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
 
   const hasChanged = selectedId !== (currentOperatorId ?? "");
 
@@ -35,8 +37,10 @@ export default function OperatorAssign({
     try {
       const result = await assignLicenseOperator(licenseId, selectedId || null);
       if (result.error) {
+        toast(result.error, "error");
         setError(result.error);
       } else {
+        toast("Operator updated");
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
         router.refresh();

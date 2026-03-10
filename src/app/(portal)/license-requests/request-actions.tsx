@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type Props = {
   requestId: string;
@@ -18,6 +19,7 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
   const [denyReason, setDenyReason] = useState("");
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
 
   async function handleApprove() {
     setLoading(true);
@@ -55,6 +57,7 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
       });
     }
 
+    toast(`Request approved — ${quantity} key${quantity !== 1 ? "s" : ""} generated`);
     setLoading(false);
     router.refresh();
   }
@@ -69,6 +72,7 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", requestId);
+    toast("Request denied");
     setLoading(false);
     setShowDeny(false);
     router.refresh();

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type Tier = {
   id: string;
@@ -41,6 +42,7 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
   const [error, setError] = useState("");
   const supabase = createClient();
   const router = useRouter();
+  const { toast } = useToast();
 
   async function handleAdd() {
     if (!newName.trim() || !newLabel.trim()) return;
@@ -57,8 +59,10 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
     });
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast("Tier added");
       setAdding(false);
       setNewName("");
       setNewLabel("");
@@ -85,8 +89,10 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
       .eq("id", id);
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast("Tier updated");
       setEditing(null);
       router.refresh();
     }
@@ -104,8 +110,10 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
       .eq("id", id);
 
     if (error) {
+      toast(error.message, "error");
       setError(error.message);
     } else {
+      toast(`"${name}" tier deleted`);
       setTiers(tiers.filter((t) => t.id !== id));
       router.refresh();
     }

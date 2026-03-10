@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 
 type Operator = { id: string; name: string | null; email: string };
 type GeneratedKey = { id: string; key: string; tier: string };
@@ -19,6 +20,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
   const [generatedKeys, setGeneratedKeys] = useState<GeneratedKey[]>([]);
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase
@@ -45,7 +47,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
         p_expires_at: expiresAt.toISOString(),
       });
       if (error) {
-        alert(error.message);
+        toast(error.message, "error");
         setLoading(false);
         return;
       }
@@ -58,7 +60,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
         p_quantity: quantity,
       });
       if (error) {
-        alert(error.message);
+        toast(error.message, "error");
         setLoading(false);
         return;
       }
@@ -82,6 +84,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
   function handleCopyAll() {
     const text = generatedKeys.map((k) => k.key).join("\n");
     navigator.clipboard.writeText(text);
+    toast("Copied to clipboard");
   }
 
   function handleDownloadCSV() {
@@ -93,6 +96,7 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
     a.download = `license-keys-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast("CSV downloaded");
   }
 
   if (!open) {

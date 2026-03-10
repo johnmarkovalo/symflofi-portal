@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 import { LocalTime } from "@/components/local-time";
 
 type License = {
@@ -59,6 +60,7 @@ export default function LicenseTable({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
+  const { toast } = useToast();
 
   // Only unbound keys owned by current operator can be transferred
   const transferable = licenses.filter(
@@ -191,9 +193,9 @@ export default function LicenseTable({
       }))
     );
 
-    setSuccess(
-      `${selectedLicenses.length} license${selectedLicenses.length !== 1 ? "s" : ""} transferred to ${recipientOp.name || recipientOp.email}`
-    );
+    const msg = `${selectedLicenses.length} license${selectedLicenses.length !== 1 ? "s" : ""} transferred to ${recipientOp.name || recipientOp.email}`;
+    setSuccess(msg);
+    toast(msg);
     setSelected(new Set());
     setLoading(false);
     setTimeout(() => {

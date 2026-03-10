@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/toast";
 import { createOperator } from "./actions";
 
 type DistributorTier = {
@@ -30,6 +31,7 @@ export default function NewOperatorPage() {
   const [error, setError] = useState("");
   const router = useRouter();
   const supabase = createClient();
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase
@@ -72,10 +74,12 @@ export default function NewOperatorPage() {
       });
 
       if (result.error) {
+        toast(result.error, "error");
         setError(result.error);
         return;
       }
 
+      toast(`Operator ${name} created`);
       router.push("/operators");
       router.refresh();
     } catch {
