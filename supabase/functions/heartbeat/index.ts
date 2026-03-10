@@ -20,7 +20,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { machine_uuid, license_key, wg_public_key } = await req.json();
+    const { machine_uuid, license_key, wg_public_key, health } = await req.json();
 
     if (!machine_uuid || !license_key) {
       return new Response(
@@ -90,6 +90,24 @@ serve(async (req) => {
       .from("machines")
       .update(updateData)
       .eq("id", machine.id);
+
+    // Store health snapshot if provided
+    if (health && typeof health === "object") {
+      await supabase.from("machine_health").insert({
+        machine_id: machine.id,
+        cpu_percent: null, // device doesn't report CPU load %
+        ram_percent: health.mem_used_percent ?? null,
+        disk_percent: health.disk_used_percent ?? null,
+        temperature: health.cpu_temp ?? null,
+        uptime_secs: health.uptime_secs ? Math.floor(health.uptime_secs) : null,
+        connected_clients: health.connected_clients ?? null,
+      });
+
+      // Clean up old snapshots — keep only the latest 100 per machine
+      await supabase.rpc("cleanup_old_health", { p_machine_id: machine.id, p_keep: 100 }).catch(() => {
+        // RPC may not exist yet — non-fatal
+      });
+    }
 
     return new Response(
       JSON.stringify({ ok: true, wg_ip: wgIp || null }),
