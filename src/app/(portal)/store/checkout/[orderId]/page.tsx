@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Order = {
@@ -31,6 +31,7 @@ const paymentMethods: { id: PaymentMethod; label: string; icon: string; descript
 
 export default function CheckoutPage() {
   const { orderId } = useParams<{ orderId: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
 
@@ -40,7 +41,43 @@ export default function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [step, setStep] = useState<"payment" | "processing" | "success">("payment");
+  const [step, setStep] = useState<"payment" | "processing" | "success" | "failed">("payment");
+
+  // Poll for payment status after returning from provider
+  const pollStatus = useCallback(async () => {
+    let attempts = 0;
+    const maxAttempts = 60; // 2 minutes at 2s intervals
+
+    const poll = async () => {
+      if (attempts >= maxAttempts) {
+        setError("Payment confirmation timed out. Please check your Licenses page — your keys may still be issued.");
+        setStep("payment");
+        return;
+      }
+      attempts++;
+
+      try {
+        const res = await fetch(`/api/payments/status?orderId=${orderId}`);
+        const data = await res.json();
+
+        if (data.status === "paid") {
+          setStep("success");
+          return;
+        }
+        if (data.status === "failed" || data.status === "cancelled" || data.status === "expired") {
+          setStep("failed");
+          return;
+        }
+
+        // Still pending — poll again
+        setTimeout(poll, 2000);
+      } catch {
+        setTimeout(poll, 3000);
+      }
+    };
+
+    poll();
+  }, [orderId]);
 
   useEffect(() => {
     async function loadOrder() {
@@ -54,6 +91,13 @@ export default function CheckoutPage() {
         return;
       }
 
+      if (orderData.status === "paid") {
+        setOrder(orderData);
+        setItems(itemsData ?? []);
+        setStep("success");
+        return;
+      }
+
       if (orderData.status !== "pending") {
         setLoadError("This order has already been processed");
         return;
@@ -61,9 +105,16 @@ export default function CheckoutPage() {
 
       setOrder(orderData);
       setItems(itemsData ?? []);
+
+      // If returning from payment provider, start polling
+      const returnStatus = searchParams.get("status");
+      if (returnStatus === "success" || returnStatus === "failed") {
+        setStep("processing");
+        pollStatus();
+      }
     }
     loadOrder();
-  }, [orderId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orderId, searchParams, pollStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalLicenses = items.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -73,27 +124,29 @@ export default function CheckoutPage() {
     setError("");
     setStep("processing");
 
-    // Simulate payment processing (replace with real Xendit integration)
-    await new Promise((r) => setTimeout(r, 3000));
+    try {
+      const res = await fetch("/api/payments/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: order.id }),
+      });
 
-    const { error: updateError } = await supabase
-      .from("license_orders")
-      .update({
-        status: "paid",
-        payment_method: paymentMethod,
-        paid_at: new Date().toISOString(),
-      })
-      .eq("id", order.id);
+      const data = await res.json();
 
-    if (updateError) {
-      setError(updateError.message);
+      if (!res.ok || data.error) {
+        setError(data.error || "Failed to create payment session");
+        setStep("payment");
+        setProcessing(false);
+        return;
+      }
+
+      // Redirect to provider's hosted payment page
+      window.location.href = data.checkoutUrl;
+    } catch {
+      setError("Network error. Please try again.");
       setStep("payment");
       setProcessing(false);
-      return;
     }
-
-    setStep("success");
-    setProcessing(false);
   }
 
   if (loadError) {
@@ -138,7 +191,7 @@ export default function CheckoutPage() {
           ))}
         </div>
         <p className="text-xs text-muted-foreground mb-6">
-          Your license keys will be issued and appear in your Licenses page shortly.
+          Your license keys have been issued and are ready in your Licenses page.
         </p>
         <div className="flex items-center justify-center gap-3">
           <button
@@ -158,6 +211,28 @@ export default function CheckoutPage() {
     );
   }
 
+  if (step === "failed") {
+    return (
+      <div className="max-w-lg mx-auto mt-12 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-destructive/10 border border-destructive/20 mb-4">
+          <svg className="w-8 h-8 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h2 className="text-lg font-bold text-foreground mb-2">Payment Failed</h2>
+        <p className="text-sm text-muted-foreground mb-6">Your payment was not completed. No charges were made.</p>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => router.push("/store")}
+            className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (step === "processing") {
     return (
       <div className="max-w-lg mx-auto mt-12 text-center">
@@ -167,7 +242,7 @@ export default function CheckoutPage() {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
         </div>
-        <h2 className="text-lg font-bold text-foreground mb-2">Processing Payment</h2>
+        <h2 className="text-lg font-bold text-foreground mb-2">Confirming Payment</h2>
         <p className="text-sm text-muted-foreground">Please wait while we confirm your payment...</p>
       </div>
     );
@@ -260,7 +335,7 @@ export default function CheckoutPage() {
               disabled={!paymentMethod || processing}
               className="w-full mt-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-all shadow-lg shadow-primary/25"
             >
-              {processing ? "Processing..." : `Pay ₱${(order.total_price_cents / 100).toLocaleString()}`}
+              {processing ? "Redirecting..." : `Pay ₱${(order.total_price_cents / 100).toLocaleString()}`}
             </button>
 
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60">
