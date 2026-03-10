@@ -120,8 +120,8 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
         )}
       </div>
 
-      {/* Remote Access */}
-      {machine.wg_ip && machine.license_tier === "pro" && (
+      {/* Remote Access — show for any tier that has remote_access enabled */}
+      {machine.wg_ip && ["pro", "enterprise"].includes(machine.license_tier) && (
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-medium text-foreground">Remote Access</h3>
