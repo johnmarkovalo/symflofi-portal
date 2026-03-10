@@ -20,7 +20,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { machine_uuid, license_key, wg_public_key, health } = await req.json();
+    const { machine_uuid, license_key, wg_public_key, health, app_version, hardware, os_version, ip_address } = await req.json();
 
     if (!machine_uuid || !license_key) {
       return new Response(
@@ -43,11 +43,15 @@ serve(async (req) => {
       );
     }
 
-    // Update last seen
+    // Update last seen + device info
     const updateData: Record<string, unknown> = {
       last_seen_at: new Date().toISOString(),
       is_online: true,
     };
+    if (app_version) updateData.app_version = app_version;
+    if (hardware) updateData.hardware = hardware;
+    if (os_version) updateData.os_version = os_version;
+    if (ip_address) updateData.ip_address = ip_address;
 
     // Handle WireGuard peer provisioning
     let wgIp = machine.wg_ip;
