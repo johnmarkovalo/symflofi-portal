@@ -114,7 +114,6 @@ export default function StorePlans({ plans }: { plans: Plan[] }) {
         {plans.map((plan) => {
           const qty = getQuantity(plan.name);
           const inCart = qty > 0;
-          const isFree = plan.priceCents === 0;
           return (
             <div
               key={plan.name}
@@ -157,11 +156,7 @@ export default function StorePlans({ plans }: { plans: Plan[] }) {
                 ))}
               </ul>
 
-              {isFree ? (
-                <div className="text-center py-3 rounded-xl text-sm font-semibold text-muted-foreground border border-border">
-                  Current Plan
-                </div>
-              ) : inCart ? (
+              {inCart ? (
                 <div className="flex items-center border border-primary/30 rounded-xl overflow-hidden">
                   <button
                     onClick={() => setQuantity(plan.name, plan, qty - 1)}

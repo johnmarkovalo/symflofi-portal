@@ -58,6 +58,7 @@ export default async function StorePage() {
     .from("license_tiers")
     .select("*")
     .eq("is_public", true)
+    .gt("price_cents", 0)
     .order("sort_order", { ascending: true });
 
   const plans = (tiers ?? []).map((tier: LicenseTier) => ({
