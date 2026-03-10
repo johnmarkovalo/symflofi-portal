@@ -1,4 +1,5 @@
 import PublicNav from "@/components/public-nav";
+import DownloadLink from "./download-link";
 
 const UPDATES_BASE = "https://api.symflofi.cloud/updates";
 const MANIFEST_URL = `${UPDATES_BASE}/manifest.json`;
@@ -176,19 +177,25 @@ export default async function DownloadsPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {bundle.image && (
-                            <a
+                            <DownloadLink
                               href={`${STORAGE_BASE}/${bundle.image.url}`}
+                              version={latestVersion}
+                              board={boardId}
+                              fileType="image"
                               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-xs hover:bg-primary/90 transition-all shadow-md shadow-primary/25"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                               </svg>
                               Full Image ({formatSize(bundle.image.size)})
-                            </a>
+                            </DownloadLink>
                           )}
                           {bundle.update && (
-                            <a
+                            <DownloadLink
                               href={`${STORAGE_BASE}/${bundle.update.url}`}
+                              version={latestVersion}
+                              board={boardId}
+                              fileType="update"
                               className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold text-xs transition-all ${
                                 bundle.image
                                   ? "border border-border text-foreground hover:bg-muted"
@@ -199,7 +206,7 @@ export default async function DownloadsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
                               OTA Update ({formatSize(bundle.update.size)})
-                            </a>
+                            </DownloadLink>
                           )}
                         </div>
                       </div>
@@ -257,20 +264,26 @@ export default async function DownloadsPage() {
                       return (
                         <div key={boardId} className="flex items-center gap-1.5">
                           {bundle.image && (
-                            <a
+                            <DownloadLink
                               href={`${STORAGE_BASE}/${bundle.image.url}`}
+                              version={version}
+                              board={boardId}
+                              fileType="image"
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-border text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                             >
                               {label} Image
-                            </a>
+                            </DownloadLink>
                           )}
                           {bundle.update && (
-                            <a
+                            <DownloadLink
                               href={`${STORAGE_BASE}/${bundle.update.url}`}
+                              version={version}
+                              board={boardId}
+                              fileType="update"
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-border text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                             >
                               {label} OTA
-                            </a>
+                            </DownloadLink>
                           )}
                         </div>
                       );
