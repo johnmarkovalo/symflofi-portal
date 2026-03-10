@@ -23,17 +23,6 @@ export default async function LicensesPage() {
 
   const { data: licenses } = await query;
 
-  // Check if operator is a distributor
-  let isDistributor = false;
-  if (!isAdmin && ctx.operatorId) {
-    const { data: op } = await supabase
-      .from("operators")
-      .select("is_distributor")
-      .eq("id", ctx.operatorId)
-      .single();
-    isDistributor = op?.is_distributor ?? false;
-  }
-
   // Only admins can generate keys
   let operators: { id: string; name: string | null; email: string }[] = [];
   if (isAdmin) {
@@ -62,7 +51,6 @@ export default async function LicensesPage() {
       <LicenseTable
         licenses={(licenses ?? []) as Parameters<typeof LicenseTable>[0]["licenses"]}
         isAdmin={isAdmin}
-        isDistributor={isDistributor}
         operatorId={ctx.operatorId ?? null}
       />
     </div>

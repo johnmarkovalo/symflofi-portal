@@ -46,12 +46,10 @@ function StatusBadge({ activated }: { activated: boolean }) {
 export default function LicenseTable({
   licenses,
   isAdmin,
-  isDistributor,
   operatorId,
 }: {
   licenses: License[];
   isAdmin: boolean;
-  isDistributor: boolean;
   operatorId: string | null;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -66,7 +64,8 @@ export default function LicenseTable({
   const transferable = licenses.filter(
     (l) => !l.is_activated && l.operator_id === operatorId
   );
-  const canTransfer = isDistributor && transferable.length > 0;
+  const canTransfer = !isAdmin && transferable.length > 0;
+  const [confirmStep, setConfirmStep] = useState(false);
 
   const allTransferableSelected =
     transferable.length > 0 && transferable.every((l) => selected.has(l.id));
@@ -92,6 +91,7 @@ export default function LicenseTable({
     setError("");
     setSuccess("");
     setRecipient("");
+    setConfirmStep(false);
     setShowTransfer(true);
   }
 
@@ -114,12 +114,12 @@ export default function LicenseTable({
 
     const { data: currentOperator } = await supabase
       .from("operators")
-      .select("id, is_distributor")
+      .select("id")
       .eq("auth_user_id", user.id)
       .single();
 
-    if (!currentOperator?.is_distributor) {
-      setError("Only distributors can transfer licenses");
+    if (!currentOperator) {
+      setError("Operator not found");
       setLoading(false);
       return;
     }
@@ -331,7 +331,7 @@ export default function LicenseTable({
               Transfer {selected.size} unbound key{selected.size !== 1 ? "s" : ""} to another operator
             </p>
 
-            <form onSubmit={handleTransfer} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); if (!confirmStep) { setConfirmStep(true); } else { handleTransfer(e); } }} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1.5">
                   Recipient Operator Code or Email
@@ -339,7 +339,7 @@ export default function LicenseTable({
                 <input
                   type="text"
                   value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
+                  onChange={(e) => { setRecipient(e.target.value); setConfirmStep(false); }}
                   required
                   autoFocus
                   className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
@@ -359,6 +359,16 @@ export default function LicenseTable({
                   ))}
               </div>
 
+              {/* Irreversible warning on confirm step */}
+              {confirmStep && !success && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
+                  <p className="text-sm font-medium text-amber-400 mb-1">This action cannot be undone</p>
+                  <p className="text-xs text-amber-400/80">
+                    Once transferred, you will lose access to {selected.size === 1 ? "this license" : `these ${selected.size} licenses`}. Only an admin can transfer them back.
+                  </p>
+                </div>
+              )}
+
               {error && (
                 <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
                   {error}
@@ -374,18 +384,22 @@ export default function LicenseTable({
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowTransfer(false)}
+                  onClick={() => { if (confirmStep) { setConfirmStep(false); } else { setShowTransfer(false); } }}
                   disabled={loading}
                   className="flex-1 bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all disabled:opacity-50"
                 >
-                  Cancel
+                  {confirmStep ? "Back" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={loading || !!success}
-                  className="flex-1 bg-primary text-primary-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-all shadow-lg shadow-primary/25"
+                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50 transition-all shadow-lg ${
+                    confirmStep
+                      ? "bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/25"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/25"
+                  }`}
                 >
-                  {loading ? "Transferring..." : "Transfer"}
+                  {loading ? "Transferring..." : confirmStep ? "Confirm Transfer" : "Transfer"}
                 </button>
               </div>
             </form>

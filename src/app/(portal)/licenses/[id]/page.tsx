@@ -4,6 +4,7 @@ import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
 import OperatorAssign from "./operator-assign";
+import RevokeLicenseButton from "./revoke-button";
 
 const eventLabels: Record<string, string> = {
   created: "Created",
@@ -138,6 +139,13 @@ export default async function LicenseInfoPage({
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${tierStyles[license.tier] ?? tierStyles.demo}`}>
           {license.tier}
         </span>
+        {(license.is_activated || license.machine_id) && (
+          <RevokeLicenseButton
+            licenseId={license.id}
+            hasOperator={!!license.operator_id}
+            isAdmin={isAdmin}
+          />
+        )}
       </div>
 
       {/* License info cards */}
