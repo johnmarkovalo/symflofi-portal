@@ -54,26 +54,38 @@ export default async function StorePage() {
 
   const supabase = await createClient();
 
-  // Look up distributor discount for this operator
+  // Look up distributor info for this operator
   let discountPct = 0;
+  let currentDistributorTier: string | null = null;
+  let isDistributor = false;
   if (ctx.operatorId) {
     const { data: operator } = await supabase
       .from("operators")
-      .select("is_distributor, distributor_discount_pct")
+      .select("is_distributor, distributor_discount_pct, distributor_tier")
       .eq("id", ctx.operatorId)
       .single();
 
-    if (operator?.is_distributor && operator.distributor_discount_pct > 0) {
-      discountPct = operator.distributor_discount_pct;
+    if (operator?.is_distributor) {
+      isDistributor = true;
+      currentDistributorTier = operator.distributor_tier;
+      if (operator.distributor_discount_pct > 0) {
+        discountPct = operator.distributor_discount_pct;
+      }
     }
   }
 
-  const { data: tiers } = await supabase
-    .from("license_tiers")
-    .select("*")
-    .eq("is_public", true)
-    .gt("price_cents", 0)
-    .order("sort_order", { ascending: true });
+  const [{ data: tiers }, { data: distributorTiers }] = await Promise.all([
+    supabase
+      .from("license_tiers")
+      .select("*")
+      .eq("is_public", true)
+      .gt("price_cents", 0)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("distributor_tiers")
+      .select("name, label, discount_pct, min_licenses, bonus_licenses, sort_order")
+      .order("sort_order", { ascending: true }),
+  ]);
 
   const plans = (tiers ?? []).map((tier: LicenseTier) => {
     const discountedCents = discountPct > 0
@@ -99,6 +111,21 @@ export default async function StorePage() {
     };
   });
 
+  const bulkPackages = (distributorTiers ?? []).map((dt) => ({
+    tierName: dt.name as string,
+    tierLabel: dt.label as string,
+    baseQuantity: dt.min_licenses as number,
+    bonusQuantity: dt.bonus_licenses as number,
+    totalQuantity: (dt.min_licenses as number) + (dt.bonus_licenses as number),
+    discountPct: dt.discount_pct as number,
+  }));
+
+  const licenseTierPrices = (tiers ?? []).map((t: LicenseTier) => ({
+    name: t.name,
+    label: t.label,
+    priceCents: t.price_cents,
+  }));
+
   return (
     <div>
       <div className="mb-8">
@@ -117,7 +144,14 @@ export default async function StorePage() {
         )}
       </div>
 
-      <StorePlans plans={plans} />
+      <StorePlans
+        plans={plans}
+        bulkPackages={bulkPackages}
+        licenseTierPrices={licenseTierPrices}
+        isDistributor={isDistributor}
+        currentDistributorTier={currentDistributorTier}
+        operatorDiscountPct={discountPct}
+      />
     </div>
   );
 }

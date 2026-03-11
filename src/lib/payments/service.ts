@@ -18,11 +18,63 @@ export async function createPaymentSession(orderId: string, userEmail: string, u
   if (orderErr || !order) throw new Error("Order not found");
   if (order.status !== "pending") throw new Error("Order is not pending");
 
-  // Load items for description
+  // Load line items with full details
   const { data: items } = await supabase
     .from("license_order_items")
-    .select("tier_label, quantity")
+    .select("tier_name, tier_label, quantity, bonus_quantity, discount_pct")
     .eq("order_id", orderId);
+
+  if (!items || items.length === 0) throw new Error("Order has no items");
+
+  // Load operator's distributor discount
+  const { data: operator } = await supabase
+    .from("operators")
+    .select("is_distributor, distributor_discount_pct")
+    .eq("id", order.operator_id)
+    .single();
+
+  const operatorDiscountPct = (operator?.is_distributor && operator.distributor_discount_pct > 0)
+    ? operator.distributor_discount_pct
+    : 0;
+
+  // Load all referenced license tier prices
+  const tierNames = [...new Set(items.map((i) => i.tier_name))];
+  const { data: tiers } = await supabase
+    .from("license_tiers")
+    .select("name, price_cents")
+    .in("name", tierNames);
+
+  const tierPriceMap = new Map((tiers ?? []).map((t) => [t.name, t.price_cents]));
+
+  // Recompute total server-side from line items and actual DB prices
+  let verifiedTotal = 0;
+  for (const item of items) {
+    const basePriceCents = tierPriceMap.get(item.tier_name);
+    if (basePriceCents === undefined) throw new Error(`Unknown tier: ${item.tier_name}`);
+
+    const isBulk = (item.bonus_quantity ?? 0) > 0;
+    if (isBulk) {
+      // Bulk package: discount applies to paid keys only (total - bonus)
+      const paidQty = item.quantity - (item.bonus_quantity ?? 0);
+      const discountedUnit = Math.round(basePriceCents * (1 - operatorDiscountPct / 100));
+      verifiedTotal += discountedUnit * paidQty;
+    } else {
+      // Individual: operator discount applies per unit
+      const discountedUnit = operatorDiscountPct > 0
+        ? Math.round(basePriceCents * (1 - operatorDiscountPct / 100))
+        : basePriceCents;
+      verifiedTotal += discountedUnit * item.quantity;
+    }
+  }
+
+  // Reject if client-submitted total doesn't match server-computed total
+  if (order.total_price_cents !== verifiedTotal) {
+    // Update the order with the correct total
+    await supabase
+      .from("license_orders")
+      .update({ total_price_cents: verifiedTotal })
+      .eq("id", orderId);
+  }
 
   const description = (items ?? [])
     .map((i) => `${i.quantity}x ${i.tier_label}`)
@@ -30,7 +82,7 @@ export async function createPaymentSession(orderId: string, userEmail: string, u
 
   const result = await provider.createSession({
     orderId,
-    amountCents: order.total_price_cents,
+    amountCents: verifiedTotal,
     currency: "PHP",
     description: `SymfloFi Licenses: ${description}`,
     customerEmail: userEmail,
@@ -132,14 +184,13 @@ async function processPaymentEvent(event: WebhookEvent) {
       })
       .eq("id", order.id);
 
-    // Generate license keys for each line item
+    // Generate license keys for each line item, linked to the order
     const { data: items } = await supabase
       .from("license_order_items")
       .select("tier_name, quantity")
       .eq("order_id", order.id);
 
     for (const item of items ?? []) {
-      // Look up duration_days from the tier to compute expires_at
       const { data: tier } = await supabase
         .from("license_tiers")
         .select("duration_days")
@@ -155,6 +206,7 @@ async function processPaymentEvent(event: WebhookEvent) {
         p_tier: item.tier_name,
         p_expires_at: expiresAt.toISOString(),
         p_quantity: item.quantity,
+        p_order_id: order.id,
       });
     }
   } else {

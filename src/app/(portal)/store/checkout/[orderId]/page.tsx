@@ -18,6 +18,9 @@ type OrderItem = {
   quantity: number;
   unit_price_cents: number;
   line_total_cents: number;
+  distributor_tier_name: string | null;
+  bonus_quantity: number;
+  discount_pct: number;
 };
 
 type PaymentMethod = "gcash" | "maya" | "bank_transfer" | "card";
@@ -187,7 +190,12 @@ export default function CheckoutPage() {
         </p>
         <div className="text-xs text-muted-foreground mb-6 space-y-0.5">
           {items.map((item) => (
-            <p key={item.id}>{item.quantity}&times; {item.tier_label}</p>
+            <p key={item.id}>
+              {item.quantity}&times; {item.tier_label}
+              {item.bonus_quantity > 0 && (
+                <span className="text-emerald-400"> ({item.bonus_quantity} bonus)</span>
+              )}
+            </p>
           ))}
         </div>
         <p className="text-xs text-muted-foreground mb-6">
@@ -316,8 +324,11 @@ export default function CheckoutPage() {
               {items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between">
                   <div>
-                    <span className="text-foreground capitalize">{item.tier_label}</span>
+                    <span className="text-foreground">{item.tier_label}</span>
                     <span className="text-muted-foreground ml-1">&times;{item.quantity}</span>
+                    {item.bonus_quantity > 0 && (
+                      <span className="text-emerald-400 text-xs ml-1">({item.bonus_quantity} bonus)</span>
+                    )}
                   </div>
                   <span className="text-foreground">₱{(item.line_total_cents / 100).toLocaleString()}</span>
                 </div>
