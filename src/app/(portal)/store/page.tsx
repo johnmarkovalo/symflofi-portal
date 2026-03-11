@@ -54,6 +54,20 @@ export default async function StorePage() {
 
   const supabase = await createClient();
 
+  // Look up distributor discount for this operator
+  let discountPct = 0;
+  if (ctx.operatorId) {
+    const { data: operator } = await supabase
+      .from("operators")
+      .select("is_distributor, distributor_discount_pct")
+      .eq("id", ctx.operatorId)
+      .single();
+
+    if (operator?.is_distributor && operator.distributor_discount_pct > 0) {
+      discountPct = operator.distributor_discount_pct;
+    }
+  }
+
   const { data: tiers } = await supabase
     .from("license_tiers")
     .select("*")
@@ -61,21 +75,29 @@ export default async function StorePage() {
     .gt("price_cents", 0)
     .order("sort_order", { ascending: true });
 
-  const plans = (tiers ?? []).map((tier: LicenseTier) => ({
-    name: tier.name,
-    label: tier.label,
-    price: formatTierPrice(tier.price_cents),
-    priceCents: tier.price_cents,
-    period:
-      tier.price_cents > 0 && tier.duration_days === 365
-        ? "/year"
-        : tier.price_cents > 0
-          ? `/${tier.duration_days}d`
-          : "",
-    durationDays: tier.duration_days,
-    features: buildFeatureList(tier),
-    highlight: tier.is_highlighted,
-  }));
+  const plans = (tiers ?? []).map((tier: LicenseTier) => {
+    const discountedCents = discountPct > 0
+      ? Math.round(tier.price_cents * (1 - discountPct / 100))
+      : tier.price_cents;
+
+    return {
+      name: tier.name,
+      label: tier.label,
+      price: formatTierPrice(discountedCents),
+      priceCents: discountedCents,
+      originalPriceCents: discountPct > 0 ? tier.price_cents : undefined,
+      originalPrice: discountPct > 0 ? formatTierPrice(tier.price_cents) : undefined,
+      period:
+        tier.price_cents > 0 && tier.duration_days === 365
+          ? "/year"
+          : tier.price_cents > 0
+            ? `/${tier.duration_days}d`
+            : "",
+      durationDays: tier.duration_days,
+      features: buildFeatureList(tier),
+      highlight: tier.is_highlighted,
+    };
+  });
 
   return (
     <div>
@@ -84,6 +106,15 @@ export default async function StorePage() {
         <p className="text-sm text-muted-foreground mt-1">
           Purchase license keys for your piso WiFi machines
         </p>
+        {discountPct > 0 && (
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+            </svg>
+            <span className="text-sm font-semibold text-emerald-400">{discountPct}% Distributor Discount Applied</span>
+          </div>
+        )}
       </div>
 
       <StorePlans plans={plans} />

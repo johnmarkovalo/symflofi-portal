@@ -10,6 +10,8 @@ type Plan = {
   label: string;
   price: string;
   priceCents: number;
+  originalPriceCents?: number;
+  originalPrice?: string;
   period: string;
   durationDays: number;
   features: string[];
@@ -141,7 +143,10 @@ export default function StorePlans({ plans }: { plans: Plan[] }) {
               )}
               <h3 className="text-lg font-bold text-foreground">{plan.label}</h3>
               <div className="mt-5 mb-6">
-                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                {plan.originalPrice && (
+                  <span className="text-sm text-muted-foreground line-through mr-2">{plan.originalPrice}</span>
+                )}
+                <span className={`text-3xl font-bold ${plan.originalPrice ? "text-emerald-400" : "text-foreground"}`}>{plan.price}</span>
                 {plan.period && (
                   <span className="text-sm text-muted-foreground">{plan.period}</span>
                 )}
