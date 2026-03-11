@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { logAdminActionClient } from "@/lib/audit-client";
 
 type Operator = { id: string; name: string | null; email: string };
 type GeneratedKey = { id: string; key: string; tier: string };
@@ -73,6 +74,13 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
 
     setLoading(false);
     router.refresh();
+
+    logAdminActionClient({
+      action: "license.generate",
+      entityType: "license",
+      summary: `Generated ${quantity} ${tier} license key(s)`,
+      details: { tier, operatorId: operatorId || null, quantity, months },
+    });
   }
 
   function handleClose() {

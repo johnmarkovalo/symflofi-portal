@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { logAdminActionClient } from "@/lib/audit-client";
 
 type Tier = {
   id: string;
@@ -63,6 +64,12 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
       setError(error.message);
     } else {
       toast("Tier added");
+      logAdminActionClient({
+        action: "distributor_tier.create",
+        entityType: "distributor_tier",
+        summary: `Created distributor tier "${newLabel}"`,
+        details: { name: newName, label: newLabel, discount_pct: newDiscount, min_licenses: newMinLicenses, bonus_licenses: newBonusLicenses },
+      });
       setAdding(false);
       setNewName("");
       setNewLabel("");
@@ -93,6 +100,13 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
       setError(error.message);
     } else {
       toast("Tier updated");
+      logAdminActionClient({
+        action: "distributor_tier.update",
+        entityType: "distributor_tier",
+        entityId: id,
+        summary: `Updated distributor tier "${editLabel}"`,
+        details: { label: editLabel, discount_pct: editDiscount, min_licenses: editMinLicenses, bonus_licenses: editBonusLicenses },
+      });
       setEditing(null);
       router.refresh();
     }
@@ -114,6 +128,12 @@ export default function TierManager({ initialTiers, licensePrices }: { initialTi
       setError(error.message);
     } else {
       toast(`"${name}" tier deleted`);
+      logAdminActionClient({
+        action: "distributor_tier.delete",
+        entityType: "distributor_tier",
+        entityId: id,
+        summary: `Deleted distributor tier "${name}"`,
+      });
       setTiers(tiers.filter((t) => t.id !== id));
       router.refresh();
     }

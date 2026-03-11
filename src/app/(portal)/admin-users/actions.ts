@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserContext } from "@/lib/roles";
+import { logAdminAction } from "@/lib/audit";
 
 export async function getAdminUsersWithEmails() {
   const ctx = await getUserContext();
@@ -104,6 +105,14 @@ export async function addAdmin(formData: {
     return { error: dbError.message };
   }
 
+  await logAdminAction(ctx, {
+    action: "admin.add",
+    entityType: "admin_user",
+    entityId: authUserId,
+    summary: `Added admin ${formData.email} (${formData.mode} account)`,
+    details: { email: formData.email, mode: formData.mode },
+  });
+
   return { success: true };
 }
 
@@ -134,6 +143,14 @@ export async function removeAdmin(adminId: string) {
   if (dbError) {
     return { error: dbError.message };
   }
+
+  await logAdminAction(ctx, {
+    action: "admin.remove",
+    entityType: "admin_user",
+    entityId: adminId,
+    summary: `Removed admin (auth_user: ${record?.auth_user_id})`,
+    details: { adminId, auth_user_id: record?.auth_user_id },
+  });
 
   return { success: true };
 }

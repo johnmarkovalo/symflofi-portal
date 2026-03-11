@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { logAdminActionClient } from "@/lib/audit-client";
 
 type Props = {
   requestId: string;
@@ -58,6 +59,13 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
     }
 
     toast(`Request approved — ${quantity} key${quantity !== 1 ? "s" : ""} generated`);
+    logAdminActionClient({
+      action: "license_request.approve",
+      entityType: "license_request",
+      entityId: requestId,
+      summary: `Approved license request (${quantity}x ${tier})`,
+      details: { operatorId, tier, quantity, durationMonths },
+    });
     setLoading(false);
     router.refresh();
   }
@@ -73,6 +81,13 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
       })
       .eq("id", requestId);
     toast("Request denied");
+    logAdminActionClient({
+      action: "license_request.deny",
+      entityType: "license_request",
+      entityId: requestId,
+      summary: `Denied license request (${quantity}x ${tier})`,
+      details: { operatorId, tier, quantity, durationMonths, denyReason: denyReason || null },
+    });
     setLoading(false);
     setShowDeny(false);
     router.refresh();

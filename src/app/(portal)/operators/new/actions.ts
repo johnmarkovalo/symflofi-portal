@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserContext } from "@/lib/roles";
+import { logAdminAction } from "@/lib/audit";
 
 export async function createOperator(formData: {
   name: string;
@@ -45,6 +46,19 @@ export async function createOperator(formData: {
     await admin.auth.admin.deleteUser(authData.user.id);
     return { error: dbError.message };
   }
+
+  await logAdminAction(ctx, {
+    action: "operator.create",
+    entityType: "operator",
+    entityId: authData.user.id,
+    summary: `Created operator ${formData.email}`,
+    details: {
+      name: formData.name,
+      email: formData.email,
+      is_distributor: formData.is_distributor,
+      distributor_tier: formData.distributor_tier,
+    },
+  });
 
   return { success: true };
 }

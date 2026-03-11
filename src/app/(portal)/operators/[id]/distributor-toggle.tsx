@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { logAdminActionClient } from "@/lib/audit-client";
 
 type DistributorTier = {
   id: string;
@@ -77,6 +78,13 @@ export default function DistributorToggle({
       toast(error.message, "error");
     } else {
       toast("Distributor settings saved");
+      logAdminActionClient({
+        action: "operator.update_distributor",
+        entityType: "operator",
+        entityId: operatorId,
+        summary: `Set operator distributor=${enabled}, tier=${enabled ? tier : "none"}`,
+        details: { enabled, tier: enabled ? tier : null, discount_pct: enabled ? (selectedTier?.discount_pct ?? 0) : 0 },
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }

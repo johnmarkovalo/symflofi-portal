@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
+import { logAdminActionClient } from "@/lib/audit-client";
 
 type LicenseTier = {
   id: string;
@@ -99,6 +100,13 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
       setError(error.message);
     } else {
       toast("Tier updated");
+      logAdminActionClient({
+        action: "license_tier.update",
+        entityType: "license_tier",
+        entityId: id,
+        summary: `Updated license tier "${form.label}"`,
+        details: { label: form.label, price_cents: form.price_cents, duration_days: form.duration_days },
+      });
       setEditing(null);
       router.refresh();
     }
@@ -135,6 +143,12 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
       setError(error.message);
     } else {
       toast("Tier added");
+      logAdminActionClient({
+        action: "license_tier.create",
+        entityType: "license_tier",
+        summary: `Created license tier "${newForm.label}"`,
+        details: { name: newForm.name, label: newForm.label, price_cents: newForm.price_cents },
+      });
       setAdding(false);
       router.refresh();
     }
@@ -153,6 +167,12 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
       setError(error.message);
     } else {
       toast(`"${label}" tier deleted`);
+      logAdminActionClient({
+        action: "license_tier.delete",
+        entityType: "license_tier",
+        entityId: id,
+        summary: `Deleted license tier "${label}"`,
+      });
       router.refresh();
     }
     setLoading(false);

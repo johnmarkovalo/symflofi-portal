@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
+import { logAdminAction } from "@/lib/audit";
 
 export async function assignLicenseOperator(licenseId: string, operatorId: string | null) {
   const ctx = await getUserContext();
@@ -66,6 +67,24 @@ export async function assignLicenseOperator(licenseId: string, operatorId: strin
       note: "Unassigned by admin",
     });
   }
+
+  const actionType = operatorId && previousOperatorId && operatorId !== previousOperatorId
+    ? "license.transfer"
+    : operatorId && !previousOperatorId
+      ? "license.assign"
+      : "license.unassign";
+
+  await logAdminAction(ctx, {
+    action: actionType,
+    entityType: "license",
+    entityId: licenseId,
+    summary: `${actionType.split(".")[1].charAt(0).toUpperCase() + actionType.split(".")[1].slice(1)}ed license ${license.key}`,
+    details: {
+      licenseKey: license.key,
+      previousOperatorId,
+      newOperatorId: operatorId,
+    },
+  });
 
   return { success: true };
 }
@@ -138,6 +157,19 @@ export async function revokeLicense(
     note: options.unbindOnly
       ? `Hardware binding revoked by ${actorRole} (license kept with operator)`
       : "License fully revoked by admin (unbound and unassigned)",
+  });
+
+  await logAdminAction(ctx, {
+    action: "license.revoke",
+    entityType: "license",
+    entityId: licenseId,
+    summary: `Revoked license ${license.key} (${options.unbindOnly ? "unbind only" : "full revoke"})`,
+    details: {
+      licenseKey: license.key,
+      unbindOnly: options.unbindOnly,
+      operatorId: license.operator_id,
+      machineId: license.machine_id,
+    },
   });
 
   return { success: true };
