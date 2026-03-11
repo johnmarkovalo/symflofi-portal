@@ -19,9 +19,9 @@ BEGIN
     RAISE EXCEPTION 'Cannot create operator record for another user';
   END IF;
 
-  -- Prevent duplicate operator records
-  IF EXISTS (SELECT 1 FROM operators WHERE auth_user_id = p_auth_user_id) THEN
-    SELECT id INTO v_operator_id FROM operators WHERE auth_user_id = p_auth_user_id;
+  -- Prevent duplicate operator records (check both auth_user_id and email)
+  IF EXISTS (SELECT 1 FROM operators WHERE auth_user_id = p_auth_user_id OR email = p_email) THEN
+    SELECT id INTO v_operator_id FROM operators WHERE auth_user_id = p_auth_user_id OR email = p_email;
     RETURN v_operator_id;
   END IF;
 
