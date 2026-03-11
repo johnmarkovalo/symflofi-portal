@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserContext } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import { apiLimiter, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   const ctx = await getUserContext();
   if (!ctx || ctx.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
+
+  const limited = await rateLimit(apiLimiter, ctx.userId);
+  if (limited) return limited;
 
   try {
     const body = await req.json();

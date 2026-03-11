@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { pollPaymentStatus } from "@/lib/payments/service";
+import { statusLimiter, rateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,6 +13,9 @@ export async function GET(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const limited = await rateLimit(statusLimiter, user.id);
+    if (limited) return limited;
 
     const orderId = req.nextUrl.searchParams.get("orderId");
     if (!orderId) {

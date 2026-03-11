@@ -232,9 +232,9 @@ function RegisterForm() {
                 />
                 <span className="text-xs text-muted-foreground leading-relaxed">
                   I agree to the{" "}
-                  <span className="text-foreground hover:text-primary cursor-pointer">Terms of Service</span>
+                  <Link href="/terms" target="_blank" className="text-foreground hover:text-primary underline">Terms of Service</Link>
                   {" "}and{" "}
-                  <span className="text-foreground hover:text-primary cursor-pointer">Privacy Policy</span>
+                  <Link href="/privacy" target="_blank" className="text-foreground hover:text-primary underline">Privacy Policy</Link>
                 </span>
               </label>
 

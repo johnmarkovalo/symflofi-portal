@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handlePaymentWebhook } from "@/lib/payments/service";
+import { webhookLimiter, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const limited = await rateLimit(webhookLimiter, ip);
+    if (limited) return limited;
     const body = await req.json();
     await handlePaymentWebhook(req.headers, body);
     return NextResponse.json({ received: true });
