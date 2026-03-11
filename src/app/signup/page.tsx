@@ -6,6 +6,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ToastProvider, useToast } from "@/components/toast";
 
+function sanitizeAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("already registered") || lower.includes("already been registered"))
+    return "This email is already associated with an account. Please sign in instead.";
+  if (lower.includes("rate limit") || lower.includes("too many"))
+    return "Too many attempts. Please wait a moment and try again.";
+  if (lower.includes("invalid email"))
+    return "Please enter a valid email address.";
+  if (lower.includes("password") && lower.includes("weak"))
+    return "Password is too weak. Please choose a stronger password.";
+  // Fallback: never expose raw error details
+  return "Something went wrong. Please try again.";
+}
+
 export default function RegisterPage() {
   return (
     <ToastProvider>
@@ -58,8 +72,9 @@ function RegisterForm() {
     });
 
     if (authError) {
-      toast(authError.message, "error");
-      setError(authError.message);
+      const friendly = sanitizeAuthError(authError.message);
+      toast(friendly, "error");
+      setError(friendly);
       setLoading(false);
       return;
     }
@@ -79,7 +94,8 @@ function RegisterForm() {
     });
 
     if (opError) {
-      setError(opError.message);
+      console.error("Operator creation failed:", opError.message);
+      setError("This email is already associated with an account. Please sign in instead.");
       setLoading(false);
       return;
     }

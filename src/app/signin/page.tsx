@@ -34,8 +34,11 @@ function LoginForm() {
     });
 
     if (error) {
-      toast(error.message, "error");
-      setError(error.message);
+      const friendly = error.message.toLowerCase().includes("invalid")
+        ? "Invalid email or password."
+        : "Something went wrong. Please try again.";
+      toast(friendly, "error");
+      setError(friendly);
       setLoading(false);
     } else {
       toast("Signed in successfully");
