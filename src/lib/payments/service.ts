@@ -155,59 +155,109 @@ async function processPaymentEvent(event: WebhookEvent) {
   // Find order by provider session ID
   const { data: order } = await supabase
     .from("license_orders")
-    .select("id, status, operator_id")
+    .select("id, status, operator_id, keys_generated")
     .eq("provider_session_id", event.providerSessionId)
     .single();
 
   if (!order) throw new Error(`Order not found for session ${event.providerSessionId}`);
 
-  // Already processed — idempotent
-  if (order.status === "paid") return;
+  // Fully processed — idempotent
+  if (order.status === "paid" && order.keys_generated) return;
 
   if (event.status === "paid") {
-    // Update order with full payment details
-    await supabase
-      .from("license_orders")
-      .update({
-        status: "paid",
-        payment_method: event.paymentChannel ?? null,
-        payment_channel_type: event.paymentChannelType ?? null,
-        paid_at: event.paidAt ?? new Date().toISOString(),
-        provider_reference_id: event.referenceId ?? null,
-        provider_transaction_id: event.transactionId ?? null,
-        fee_cents: event.feeCents ?? null,
-        net_amount_cents: event.netAmountCents ?? null,
-        settlement_status: event.settlementStatus ?? null,
-        estimated_settlement_at: event.estimatedSettlementAt ?? null,
-        settled_at: event.settledAt ?? null,
-        provider_raw: event.raw ?? null,
-      })
-      .eq("id", order.id);
+    // If keys not yet generated (handles both fresh payments and retries)
+    if (!order.keys_generated) {
+      const { data: items } = await supabase
+        .from("license_order_items")
+        .select("tier_name, quantity")
+        .eq("order_id", order.id);
 
-    // Generate license keys for each line item, linked to the order
-    const { data: items } = await supabase
-      .from("license_order_items")
-      .select("tier_name, quantity")
-      .eq("order_id", order.id);
+      if (!items || items.length === 0) {
+        throw new Error(`No line items found for order ${order.id}`);
+      }
 
-    for (const item of items ?? []) {
-      const { data: tier } = await supabase
-        .from("license_tiers")
-        .select("duration_days")
-        .eq("name", item.tier_name)
-        .single();
+      const expectedTotal = items.reduce((sum, i) => sum + i.quantity, 0);
 
-      const durationDays = tier?.duration_days ?? 365;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + durationDays);
+      // Check how many keys already exist for this order (from a partial previous attempt)
+      const { count: existingCount } = await supabase
+        .from("license_keys")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order.id);
 
-      await supabase.rpc("generate_license_keys_bulk", {
-        p_operator_id: order.operator_id,
-        p_tier: item.tier_name,
-        p_expires_at: expiresAt.toISOString(),
-        p_quantity: item.quantity,
-        p_order_id: order.id,
-      });
+      if ((existingCount ?? 0) < expectedTotal) {
+        // Figure out how many keys exist per tier to know what's remaining
+        for (const item of items) {
+          const { count: tierCount } = await supabase
+            .from("license_keys")
+            .select("id", { count: "exact", head: true })
+            .eq("order_id", order.id)
+            .eq("tier", item.tier_name);
+
+          const remaining = item.quantity - (tierCount ?? 0);
+          if (remaining <= 0) continue;
+
+          const { data: tier } = await supabase
+            .from("license_tiers")
+            .select("duration_days")
+            .eq("name", item.tier_name)
+            .single();
+
+          const durationDays = tier?.duration_days ?? 365;
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + durationDays);
+
+          const { error: rpcError } = await supabase.rpc("generate_license_keys_bulk", {
+            p_operator_id: order.operator_id,
+            p_tier: item.tier_name,
+            p_expires_at: expiresAt.toISOString(),
+            p_quantity: remaining,
+            p_order_id: order.id,
+          });
+
+          if (rpcError) {
+            throw new Error(`Failed to generate ${remaining}x ${item.tier_name} keys for order ${order.id}: ${rpcError.message}`);
+          }
+        }
+      }
+
+      // Verify the correct number of keys were created
+      const { count: finalCount } = await supabase
+        .from("license_keys")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order.id);
+
+      if (finalCount !== expectedTotal) {
+        throw new Error(
+          `Key count mismatch for order ${order.id}: expected ${expectedTotal}, got ${finalCount}`
+        );
+      }
+
+      // Mark keys as generated (separate from payment status)
+      await supabase
+        .from("license_orders")
+        .update({ keys_generated: true })
+        .eq("id", order.id);
+    }
+
+    // Now mark the order as paid with full payment details
+    if (order.status !== "paid") {
+      await supabase
+        .from("license_orders")
+        .update({
+          status: "paid",
+          payment_method: event.paymentChannel ?? null,
+          payment_channel_type: event.paymentChannelType ?? null,
+          paid_at: event.paidAt ?? new Date().toISOString(),
+          provider_reference_id: event.referenceId ?? null,
+          provider_transaction_id: event.transactionId ?? null,
+          fee_cents: event.feeCents ?? null,
+          net_amount_cents: event.netAmountCents ?? null,
+          settlement_status: event.settlementStatus ?? null,
+          estimated_settlement_at: event.estimatedSettlementAt ?? null,
+          settled_at: event.settledAt ?? null,
+          provider_raw: event.raw ?? null,
+        })
+        .eq("id", order.id);
     }
   } else {
     // Failed or expired
