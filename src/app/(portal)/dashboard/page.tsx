@@ -36,6 +36,15 @@ type MachineRow = {
   license_tier: string | null;
 };
 
+type MachineActivityRow = {
+  last_seen_at: string | null;
+};
+
+type LicenseHealthRow = {
+  created_at: string;
+  duration_days: number;
+};
+
 function formatCurrency(cents: number) {
   return `₱${(cents / 100).toLocaleString()}`;
 }
@@ -61,6 +70,8 @@ export default async function DashboardPage() {
       distributors,
       downloads,
       machineBoards,
+      machineActivity,
+      activatedLicenseKeys,
     ] = await Promise.all([
       supabase.from("operators").select("*", { count: "exact", head: true }),
       supabase.from("license_keys").select("*", { count: "exact", head: true }),
@@ -73,6 +84,8 @@ export default async function DashboardPage() {
       supabase.from("operators").select("name, email, distributor_tier, distributor_discount_pct").eq("is_distributor", true),
       supabase.from("firmware_downloads").select("board, file_type, created_at"),
       supabase.from("machines").select("hardware, license_tier").not("hardware", "is", null),
+      supabase.from("machines").select("last_seen_at"),
+      supabase.from("license_keys").select("created_at, duration_days").eq("is_activated", true),
     ]);
 
     // --- Revenue analytics ---
@@ -145,6 +158,55 @@ export default async function DashboardPage() {
     const activeBoardBreakdown = Object.entries(activeBoardCounts)
       .sort(([, a], [, b]) => b.total - a.total);
     const totalActiveBoards = boardData.length;
+
+    // --- Revenue Trend (month-over-month) ---
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+    const lastMonthEnd = monthStart; // current month start = last month end
+    const lastMonthRevenue = orders
+      .filter((o) => o.paid_at && o.paid_at >= lastMonthStart && o.paid_at < lastMonthEnd)
+      .reduce((sum, o) => sum + o.total_price_cents, 0);
+    const revenueGrowthPct = lastMonthRevenue > 0
+      ? Math.round(((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)
+      : monthRevenue > 0 ? 100 : 0;
+
+    // --- License Health ---
+    const totalLicenseCount = licenses.count ?? 0;
+    const activatedLicenseCount = activated.count ?? 0;
+    const activatedKeys = (activatedLicenseKeys.data ?? []) as LicenseHealthRow[];
+    const nowMs = now.getTime();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    let expiredCount = 0;
+    let expiringSoonCount = 0;
+    for (const key of activatedKeys) {
+      const expiryMs = new Date(key.created_at).getTime() + key.duration_days * 24 * 60 * 60 * 1000;
+      if (expiryMs <= nowMs) {
+        expiredCount++;
+      } else if (expiryMs <= nowMs + thirtyDaysMs) {
+        expiringSoonCount++;
+      }
+    }
+
+    // --- Device Activity / Churn ---
+    const machineActivityData = (machineActivity.data ?? []) as MachineActivityRow[];
+    const fiveMinAgo = nowMs - 5 * 60 * 1000;
+    const twentyFourHoursAgo = nowMs - 24 * 60 * 60 * 1000;
+    let devicesOnline = 0;
+    let devicesOfflineRecent = 0;
+    let devicesInactive = 0;
+    for (const m of machineActivityData) {
+      if (!m.last_seen_at) {
+        devicesInactive++;
+        continue;
+      }
+      const seenMs = new Date(m.last_seen_at).getTime();
+      if (seenMs > fiveMinAgo) {
+        devicesOnline++;
+      } else if (seenMs > twentyFourHoursAgo) {
+        devicesOfflineRecent++;
+      } else {
+        devicesInactive++;
+      }
+    }
 
     // --- Stat cards ---
     const stats = [
@@ -336,6 +398,189 @@ export default async function DashboardPage() {
             ) : (
               <p className="text-sm text-muted-foreground text-center py-6">No activated machines yet</p>
             )}
+          </div>
+
+          {/* Revenue Trend */}
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-5 sm:p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+              </svg>
+              Revenue Trend
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-[11px] text-muted-foreground mb-1">Last Month</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(lastMonthRevenue)}</p>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-[11px] text-muted-foreground mb-1">This Month</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(monthRevenue)}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2">
+                <span className={`text-sm font-semibold ${revenueGrowthPct >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                  {revenueGrowthPct >= 0 ? "+" : ""}{revenueGrowthPct}%
+                </span>
+                <span className="text-xs text-muted-foreground">month-over-month</span>
+              </div>
+              {/* Visual comparison bars */}
+              <div className="space-y-2">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Last month</span>
+                    <span className="text-xs text-muted-foreground">{formatCurrency(lastMonthRevenue)}</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-zinc-500 transition-all"
+                      style={{ width: `${Math.max(lastMonthRevenue, monthRevenue) > 0 ? Math.round((lastMonthRevenue / Math.max(lastMonthRevenue, monthRevenue)) * 100) : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">This month</span>
+                    <span className="text-xs text-muted-foreground">{formatCurrency(monthRevenue)}</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all"
+                      style={{ width: `${Math.max(lastMonthRevenue, monthRevenue) > 0 ? Math.round((monthRevenue / Math.max(lastMonthRevenue, monthRevenue)) * 100) : 0}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* License Health */}
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-5 sm:p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              License Health
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-foreground">{totalLicenseCount}</p>
+                  <p className="text-[11px] text-muted-foreground">Total Keys</p>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-emerald-400">{activatedLicenseCount}</p>
+                  <p className="text-[11px] text-muted-foreground">Activated</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span className="text-sm text-foreground">Expired</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{expiredCount}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span className="text-sm text-foreground">Expiring Soon</span>
+                    <span className="text-[10px] text-muted-foreground">(30 days)</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{expiringSoonCount}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                    <span className="text-sm text-foreground">Unactivated</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{totalLicenseCount - activatedLicenseCount}</span>
+                </div>
+              </div>
+              {/* Utilization bar */}
+              {totalLicenseCount > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Utilization</span>
+                    <span className="text-xs text-muted-foreground">{Math.round((activatedLicenseCount / totalLicenseCount) * 100)}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all"
+                      style={{ width: `${Math.round((activatedLicenseCount / totalLicenseCount) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Device Activity / Churn */}
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-5 sm:p-6">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12.75h.008v.008H12v-.008z" />
+              </svg>
+              Device Activity
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-emerald-400">{devicesOnline}</p>
+                  <p className="text-[11px] text-muted-foreground">Online</p>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-amber-400">{devicesOfflineRecent}</p>
+                  <p className="text-[11px] text-muted-foreground">Offline</p>
+                </div>
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xl font-bold text-zinc-400">{devicesInactive}</p>
+                  <p className="text-[11px] text-muted-foreground">Inactive</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-sm text-foreground">Online</span>
+                    <span className="text-[10px] text-muted-foreground">(&lt;5 min)</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{devicesOnline}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span className="text-sm text-foreground">Offline Recently</span>
+                    <span className="text-[10px] text-muted-foreground">(1-24h)</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{devicesOfflineRecent}</span>
+                </div>
+                <div className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-zinc-400" />
+                    <span className="text-sm text-foreground">Inactive</span>
+                    <span className="text-[10px] text-muted-foreground">(&gt;24h / never seen)</span>
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{devicesInactive}</span>
+                </div>
+              </div>
+              {/* Health ratio */}
+              {machineActivityData.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Online Rate</span>
+                    <span className="text-xs text-muted-foreground">{Math.round((devicesOnline / machineActivityData.length) * 100)}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                      style={{ width: `${Math.round((devicesOnline / machineActivityData.length) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Recent Activity */}
