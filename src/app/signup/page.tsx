@@ -70,12 +70,12 @@ function RegisterForm() {
       return;
     }
 
-    // 2. Create operator record linked to auth user
-    const { error: opError } = await supabase.from("operators").insert({
-      auth_user_id: authData.user.id,
-      email,
-      name,
-      plan: "trial",
+    // 2. Create operator record via RPC (bypasses RLS for new signups)
+    const { error: opError } = await supabase.rpc("create_operator_on_signup", {
+      p_auth_user_id: authData.user.id,
+      p_email: email,
+      p_name: name,
+      p_plan: "trial",
     });
 
     if (opError) {
