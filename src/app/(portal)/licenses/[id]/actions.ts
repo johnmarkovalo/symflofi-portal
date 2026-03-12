@@ -125,6 +125,19 @@ export async function revokeLicense(
     return { error: "License is not bound to any machine" };
   }
 
+  // Clear license_key from the machine row so it doesn't block re-activation
+  if (license.machine_id) {
+    await supabase
+      .from("machines")
+      .update({
+        license_key: null,
+        license_tier: null,
+        license_expires_at: null,
+        status: "decommissioned",
+      })
+      .eq("id", license.machine_id);
+  }
+
   // Unbind from machine (keep activated_at to preserve expiry clock)
   const updateFields: Record<string, unknown> = {
     machine_id: null,
