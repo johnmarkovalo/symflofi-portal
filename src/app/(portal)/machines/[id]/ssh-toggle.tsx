@@ -7,20 +7,20 @@ import { useToast } from "@/components/toast";
 export default function SSHToggle({ machineId, isOnline }: { machineId: string; isOnline: boolean }) {
   const { toast } = useToast();
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isOnline);
   const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
-    if (!isOnline) {
-      setLoading(false);
-      return;
-    }
+    if (!isOnline) return;
+    let cancelled = false;
     getSSHStatus(machineId).then((res) => {
+      if (cancelled) return;
       if ("sshEnabled" in res) {
         setEnabled(res.sshEnabled as boolean);
       }
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [machineId, isOnline]);
 
   async function handleToggle() {
