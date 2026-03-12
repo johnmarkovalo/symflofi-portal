@@ -4,6 +4,7 @@ import { getUserContext } from "@/lib/roles";
 import Link from "next/link";
 import ActivityFeed from "@/components/activity-feed";
 import { LocalTime } from "@/components/local-time";
+import SSHToggle from "./ssh-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,8 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
   if (ctx.role === "operator" && machine.operator_id !== ctx.operatorId) {
     notFound();
   }
+
+  const isAdmin = ctx.role === "admin";
 
   // Look up license ID for linking
   let licenseId: string | null = null;
@@ -128,6 +131,11 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
             <p className="text-xs text-muted-foreground mt-0.5">
               Tunnel IP: <span className="font-mono">{machine.wg_ip}</span>
             </p>
+            {isAdmin && (
+              <div className="mt-2">
+                <SSHToggle machineId={id} isOnline={!!isOnline} />
+              </div>
+            )}
           </div>
           {isOnline ? (
             <a
