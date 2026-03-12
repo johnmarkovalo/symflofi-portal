@@ -5,6 +5,7 @@ import Link from "next/link";
 import ActivityFeed from "@/components/activity-feed";
 import { LocalTime } from "@/components/local-time";
 import SSHToggle from "./ssh-toggle";
+import DeleteMachineButton from "./delete-machine-button";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +242,17 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
       </div>
 
       <ActivityFeed activities={activitiesRes.data ?? []} />
+
+      {/* Admin: Delete machine */}
+      {isAdmin && (
+        <div className="mt-6 bg-card/80 backdrop-blur-sm rounded-2xl border border-red-500/20 p-6">
+          <h3 className="text-sm font-medium text-foreground mb-2">Danger Zone</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Permanently delete this machine record and all its health data. Any bound license will be unbound.
+          </p>
+          <DeleteMachineButton machineId={id} machineName={machine.name || machine.machine_uuid.slice(0, 12)} />
+        </div>
+      )}
     </div>
   );
 }

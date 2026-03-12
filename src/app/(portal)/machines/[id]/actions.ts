@@ -71,6 +71,59 @@ export async function toggleSSH(machineId: string, enabled: boolean) {
   }
 }
 
+export async function deleteMachine(machineId: string) {
+  const ctx = await getUserContext();
+  if (!ctx || ctx.role !== "admin") {
+    return { error: "Unauthorized" };
+  }
+
+  const supabase = await createClient();
+
+  const { data: machine } = await supabase
+    .from("machines")
+    .select("id, machine_uuid, name, license_key, operator_id")
+    .eq("id", machineId)
+    .single();
+
+  if (!machine) return { error: "Machine not found" };
+
+  // Unbind any license pointing to this machine
+  if (machine.license_key) {
+    await supabase
+      .from("license_keys")
+      .update({ machine_id: null, is_activated: false })
+      .eq("machine_id", machineId);
+  }
+
+  // Delete related records first (machine_health, activity_log)
+  await Promise.all([
+    supabase.from("machine_health").delete().eq("machine_id", machineId),
+    supabase.from("activity_log").delete().eq("machine_id", machineId),
+  ]);
+
+  // Delete the machine
+  const { error: deleteError } = await supabase
+    .from("machines")
+    .delete()
+    .eq("id", machineId);
+
+  if (deleteError) return { error: deleteError.message };
+
+  await logAdminAction(ctx, {
+    action: "machine.delete",
+    entityType: "machine",
+    entityId: machineId,
+    summary: `Deleted machine ${machine.name || machine.machine_uuid}`,
+    details: {
+      machine_uuid: machine.machine_uuid,
+      license_key: machine.license_key,
+      operator_id: machine.operator_id,
+    },
+  });
+
+  return { success: true };
+}
+
 export async function getSSHStatus(machineId: string) {
   const ctx = await getUserContext();
   if (!ctx || ctx.role !== "admin") {

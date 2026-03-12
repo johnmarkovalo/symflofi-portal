@@ -28,6 +28,7 @@ export default async function MachinesPage() {
   let query = supabase
     .from("machines")
     .select("*, operators(name, email)")
+    .neq("status", "decommissioned")
     .order("last_seen_at", { ascending: false, nullsFirst: false });
 
   if (!isAdmin && ctx.operatorId) {
