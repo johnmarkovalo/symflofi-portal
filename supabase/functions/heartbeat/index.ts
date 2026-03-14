@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const VPS_API_URL = Deno.env.get("VPS_API_URL") || "http://api.symflofi.cloud";
 const VPS_API_KEY = Deno.env.get("VPS_API_KEY") || "";
+const VPS_WG_ENDPOINT = Deno.env.get("VPS_WG_ENDPOINT") || "187.77.143.241:51820";
+const VPS_WG_PUBLIC_KEY = Deno.env.get("VPS_WG_PUBLIC_KEY") || "2H2Mi6/BNNnAM+S8VcJMHNrBIWQACM2spEoURv8kJTw=";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -113,8 +115,14 @@ serve(async (req) => {
       });
     }
 
+    const responseBody: Record<string, unknown> = { ok: true, wg_ip: wgIp || null };
+    if (wgIp) {
+      responseBody.server_endpoint = VPS_WG_ENDPOINT;
+      responseBody.server_public_key = VPS_WG_PUBLIC_KEY;
+    }
+
     return new Response(
-      JSON.stringify({ ok: true, wg_ip: wgIp || null }),
+      JSON.stringify(responseBody),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
