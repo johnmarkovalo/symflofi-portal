@@ -11,6 +11,7 @@ type License = {
   id: string;
   key: string;
   tier: string;
+  product: string | null;
   is_activated: boolean;
   created_at: string;
   operator_id: string | null;
@@ -28,6 +29,20 @@ function TierBadge({ tier }: { tier: string }) {
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[tier] ?? styles.demo}`}>
       {tier}
+    </span>
+  );
+}
+
+function ProductBadge({ product }: { product: string | null }) {
+  const p = product ?? "symflofi";
+  const styles: Record<string, string> = {
+    symflofi: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+    playtab: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  };
+  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab" };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[p] ?? styles.symflofi}`}>
+      {labels[p] ?? p}
     </span>
   );
 }
@@ -53,6 +68,7 @@ export default function LicenseTable({
   isAdmin: boolean;
   operatorId: string | null;
 }) {
+  const [productFilter, setProductFilter] = useState<"all" | "symflofi" | "playtab">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showTransfer, setShowTransfer] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -197,8 +213,35 @@ export default function LicenseTable({
     }, 1500);
   }
 
+  const filteredLicenses = productFilter === "all"
+    ? licenses
+    : licenses.filter((l) => (l.product ?? "symflofi") === productFilter);
+
+  const productTabs: { key: "all" | "symflofi" | "playtab"; label: string }[] = [
+    { key: "all", label: `All (${licenses.length})` },
+    { key: "symflofi", label: `SymfloFi (${licenses.filter((l) => (l.product ?? "symflofi") === "symflofi").length})` },
+    { key: "playtab", label: `PlayTab (${licenses.filter((l) => l.product === "playtab").length})` },
+  ];
+
   return (
     <>
+      {/* Product filter tabs */}
+      <div className="flex items-center gap-1 mb-4 bg-muted/50 rounded-xl p-1 w-fit">
+        {productTabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setProductFilter(tab.key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              productFilter === tab.key
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Selection toolbar */}
       {canTransfer && selected.size > 0 && (
         <div className="mb-4 flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
@@ -236,6 +279,7 @@ export default function LicenseTable({
                 </th>
               )}
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Key</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Product</th>
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Tier</th>
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Status</th>
               {isAdmin && (
@@ -247,7 +291,7 @@ export default function LicenseTable({
             </tr>
           </thead>
           <tbody>
-            {licenses.map((lic) => {
+            {filteredLicenses.map((lic) => {
               const isTransferable = !lic.is_activated && lic.operator_id === operatorId;
               const isChecked = selected.has(lic.id);
               return (
@@ -272,6 +316,7 @@ export default function LicenseTable({
                     </td>
                   )}
                   <td className="px-5 py-4 font-mono text-sm text-foreground">{lic.key}</td>
+                  <td className="px-5 py-4"><ProductBadge product={lic.product} /></td>
                   <td className="px-5 py-4"><TierBadge tier={lic.tier} /></td>
                   <td className="px-5 py-4"><StatusBadge activated={lic.is_activated} /></td>
                   {isAdmin && (
@@ -302,10 +347,10 @@ export default function LicenseTable({
                 </tr>
               );
             })}
-            {licenses.length === 0 && (
+            {filteredLicenses.length === 0 && (
               <tr>
-                <td colSpan={canTransfer ? (isAdmin ? 8 : 7) : (isAdmin ? 7 : 6)} className="px-5 py-12 text-center text-muted-foreground">
-                  No license keys yet
+                <td colSpan={canTransfer ? (isAdmin ? 9 : 8) : (isAdmin ? 8 : 7)} className="px-5 py-12 text-center text-muted-foreground">
+                  {licenses.length === 0 ? "No license keys yet" : "No licenses match the selected filter"}
                 </td>
               </tr>
             )}

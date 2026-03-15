@@ -34,6 +34,7 @@ type DownloadRow = {
 type MachineRow = {
   hardware: string | null;
   license_tier: string | null;
+  product?: string | null;
 };
 
 type MachineActivityRow = {
@@ -72,6 +73,9 @@ export default async function DashboardPage() {
       machineBoards,
       machineActivity,
       activatedLicenseKeys,
+      playtabSessions,
+      playtabRevenue,
+      machinesWithProduct,
     ] = await Promise.all([
       supabase.from("operators").select("*", { count: "exact", head: true }),
       supabase.from("license_keys").select("*", { count: "exact", head: true }),
@@ -86,6 +90,9 @@ export default async function DashboardPage() {
       supabase.from("machines").select("hardware, license_tier").not("hardware", "is", null),
       supabase.from("machines").select("last_seen_at"),
       supabase.from("license_keys").select("created_at, duration_days").eq("is_activated", true),
+      supabase.from("playtab_sessions").select("*", { count: "exact", head: true }),
+      supabase.from("playtab_daily_revenue").select("revenue_cents"),
+      supabase.from("machines").select("product, hardware, license_tier").not("hardware", "is", null),
     ]);
 
     // --- Revenue analytics ---
@@ -208,6 +215,16 @@ export default async function DashboardPage() {
       }
     }
 
+    // --- PlayTab analytics ---
+    const totalPlaytabSessions = playtabSessions.count ?? 0;
+    const totalPlaytabEarnings = ((playtabRevenue.data ?? []) as { revenue_cents: number }[])
+      .reduce((sum, r) => sum + r.revenue_cents, 0);
+
+    // --- Product breakdown for Active Boards ---
+    const machinesProductData = (machinesWithProduct.data ?? []) as MachineRow[];
+    const symflofiDeviceCount = machinesProductData.filter((m) => (m.product ?? "symflofi") === "symflofi").length;
+    const playtabDeviceCount = machinesProductData.filter((m) => m.product === "playtab").length;
+
     // --- Stat cards ---
     const stats = [
       { label: "Total Revenue", value: formatCurrency(totalRevenue), subtitle: `${totalOrders} orders`, icon: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
@@ -217,6 +234,7 @@ export default async function DashboardPage() {
       { label: "Machines", value: machines.count ?? 0, icon: "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
       { label: "Pending Requests", value: pending.count ?? 0, icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20" },
       { label: "Downloads", value: totalDownloads, subtitle: `${monthDownloads} this month`, icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4", color: "text-sky-400", bg: "bg-sky-500/10", border: "border-sky-500/20" },
+      { label: "PlayTab", value: `${totalPlaytabSessions} sessions`, subtitle: `${formatCurrency(totalPlaytabEarnings)} earnings`, icon: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     ];
 
     return (
@@ -363,6 +381,17 @@ export default async function DashboardPage() {
               </svg>
               Active Boards
             </h3>
+            {/* Product breakdown summary */}
+            {(symflofiDeviceCount > 0 || playtabDeviceCount > 0) && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-[10px] px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">
+                  SymfloFi: {symflofiDeviceCount}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                  PlayTab: {playtabDeviceCount}
+                </span>
+              </div>
+            )}
             {activeBoardBreakdown.length > 0 ? (
               <div className="space-y-4">
                 {activeBoardBreakdown.map(([board, data]) => {
@@ -593,12 +622,14 @@ export default async function DashboardPage() {
   // Operator view (includes distributors — they're operators too)
   const operatorId = ctx.operatorId!;
 
-  const [machinesRes, onlineMachinesRes, licensesRes, activatedRes, activities] = await Promise.all([
+  const [machinesRes, onlineMachinesRes, licensesRes, activatedRes, activities, operatorPlaytabMachines, operatorPlaytabRevenue] = await Promise.all([
     supabase.from("machines").select("*", { count: "exact", head: true }).eq("operator_id", operatorId),
     supabase.from("machines").select("last_seen_at").eq("operator_id", operatorId),
     supabase.from("license_keys").select("*", { count: "exact", head: true }).eq("operator_id", operatorId),
     supabase.from("license_keys").select("*", { count: "exact", head: true }).eq("operator_id", operatorId).eq("is_activated", true),
     supabase.from("activity_log").select("id, event_type, description, created_at").eq("operator_id", operatorId).order("created_at", { ascending: false }).limit(10),
+    supabase.from("machines").select("id").eq("operator_id", operatorId).eq("product", "playtab"),
+    supabase.from("playtab_daily_revenue").select("revenue_cents, machine_id, machines!inner(operator_id)").eq("machines.operator_id", operatorId),
   ]);
 
   const now = Date.now(); // eslint-disable-line react-hooks/purity
@@ -609,12 +640,28 @@ export default async function DashboardPage() {
   const totalLicenses = licensesRes.count ?? 0;
   const activatedCount = activatedRes.count ?? 0;
 
-  const stats = [
+  const operatorPlaytabCount = operatorPlaytabMachines.data?.length ?? 0;
+  const operatorPlaytabEarnings = ((operatorPlaytabRevenue.data ?? []) as { revenue_cents: number }[])
+    .reduce((sum, r) => sum + r.revenue_cents, 0);
+
+  const stats: { label: string; value: string | number; subtitle?: string; icon: string; color: string; bg: string; border: string }[] = [
     { label: "Machines Online", value: onlineCount, subtitle: `${totalMachines - onlineCount} offline`, icon: "M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
     { label: "Total Machines", value: totalMachines, icon: "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
     { label: "License Keys", value: totalLicenses, subtitle: `${activatedCount} activated`, icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
     { label: "Available Keys", value: totalLicenses - activatedCount, icon: "M12 4.5v15m7.5-7.5h-15", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
   ];
+
+  if (operatorPlaytabCount > 0) {
+    stats.push({
+      label: "PlayTab Earnings",
+      value: formatCurrency(operatorPlaytabEarnings),
+      subtitle: `${operatorPlaytabCount} PlayTab device${operatorPlaytabCount !== 1 ? "s" : ""}`,
+      icon: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z",
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+    });
+  }
 
   return (
     <div>

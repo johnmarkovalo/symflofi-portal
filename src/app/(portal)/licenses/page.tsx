@@ -14,7 +14,7 @@ export default async function LicensesPage() {
 
   let query = supabase
     .from("license_keys")
-    .select("*, operators(name, email), machines(id, machine_uuid, name)")
+    .select("*, product, operators(name, email), machines(id, machine_uuid, name)")
     .order("created_at", { ascending: false });
 
   if (!isAdmin && ctx.operatorId) {

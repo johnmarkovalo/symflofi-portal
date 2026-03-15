@@ -23,6 +23,20 @@ function TierBadge({ tier }: { tier: string }) {
   );
 }
 
+function ProductBadge({ product }: { product: string | null }) {
+  const p = product ?? "symflofi";
+  const styles: Record<string, string> = {
+    symflofi: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+    playtab: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  };
+  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab" };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[p] ?? styles.symflofi}`}>
+      {labels[p] ?? p}
+    </span>
+  );
+}
+
 function HealthBar({ label, value, unit }: { label: string; value: number | null; unit: string }) {
   if (value === null || value === undefined) return null;
   const pct = unit === "%" ? value : 0;
@@ -51,7 +65,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
 
   const { data: machine } = await supabase
     .from("machines")
-    .select("*, operators(name, email)")
+    .select("*, product, esp32_device_id, operators(name, email)")
     .eq("id", id)
     .single();
 
@@ -75,7 +89,9 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
     licenseId = lic?.id ?? null;
   }
 
-  const [healthRes, activitiesRes] = await Promise.all([
+  const isPlayTab = (machine.product ?? "symflofi") === "playtab";
+
+  const [healthRes, activitiesRes, playtabSessionsRes, playtabRevenueRes] = await Promise.all([
     supabase
       .from("machine_health")
       .select("*")
@@ -88,9 +104,19 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
       .eq("machine_id", id)
       .order("created_at", { ascending: false })
       .limit(10),
+    isPlayTab
+      ? supabase.from("playtab_sessions").select("*", { count: "exact", head: true }).eq("machine_id", id)
+      : Promise.resolve({ count: 0 }),
+    isPlayTab
+      ? supabase.from("playtab_daily_revenue").select("revenue_cents").eq("machine_id", id)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const health = healthRes.data?.[0] ?? null;
+  const playtabSessionCount = playtabSessionsRes.count ?? 0;
+  const playtabTotalEarnings = (
+    (playtabRevenueRes as { data: { revenue_cents: number }[] | null }).data ?? []
+  ).reduce((sum: number, r: { revenue_cents: number }) => sum + r.revenue_cents, 0);
   const now = Date.now(); // eslint-disable-line react-hooks/purity -- server component, not a render purity issue
   const isOnline = machine.last_seen_at &&
     new Date(machine.last_seen_at).getTime() > now - 5 * 60 * 1000;
@@ -108,6 +134,7 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
           <h1 className="text-2xl font-bold text-foreground">
             {machine.name || machine.machine_uuid.slice(0, 12)}
           </h1>
+          <ProductBadge product={machine.product} />
           <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${
             isOnline
               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
@@ -168,9 +195,19 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
               <p className="text-foreground font-mono text-xs mt-0.5">{machine.machine_uuid}</p>
             </div>
             <div>
+              <p className="text-muted-foreground">Product</p>
+              <div className="mt-0.5"><ProductBadge product={machine.product} /></div>
+            </div>
+            <div>
               <p className="text-muted-foreground">Tier</p>
               <div className="mt-0.5"><TierBadge tier={machine.license_tier} /></div>
             </div>
+            {isPlayTab && machine.esp32_device_id && (
+              <div>
+                <p className="text-muted-foreground">ESP32 Device ID</p>
+                <p className="text-foreground font-mono text-xs mt-0.5">{machine.esp32_device_id}</p>
+              </div>
+            )}
             <div>
               <p className="text-muted-foreground">Hardware</p>
               <p className="text-foreground mt-0.5">{machine.hardware || "-"}</p>
@@ -206,39 +243,66 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* Health */}
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6">
-          <h3 className="text-sm font-medium text-foreground mb-4">Health</h3>
-          {health ? (
+        {/* Health — hidden for PlayTab devices */}
+        {!isPlayTab && (
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6">
+            <h3 className="text-sm font-medium text-foreground mb-4">Health</h3>
+            {health ? (
+              <div className="space-y-4">
+                <HealthBar label="CPU" value={Number(health.cpu_percent)} unit="%" />
+                <HealthBar label="RAM" value={Number(health.ram_percent)} unit="%" />
+                <HealthBar label="Disk" value={Number(health.disk_percent)} unit="%" />
+                {health.temperature !== null && (
+                  <HealthBar label="Temperature" value={Number(health.temperature)} unit="C" />
+                )}
+                {health.uptime_secs !== null && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Uptime</span>
+                    <span className="text-foreground font-medium">
+                      {Math.floor(health.uptime_secs / 3600)}h {Math.floor((health.uptime_secs % 3600) / 60)}m
+                    </span>
+                  </div>
+                )}
+                {health.connected_clients !== null && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Connected Clients</span>
+                    <span className="text-foreground font-medium">{health.connected_clients}</span>
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground/60 pt-2">
+                  Updated: <LocalTime date={health.recorded_at} />
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">No health data yet</p>
+            )}
+          </div>
+        )}
+
+        {/* PlayTab Info — shown only for PlayTab devices */}
+        {isPlayTab && (
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6">
+            <h3 className="text-sm font-medium text-foreground mb-4">PlayTab Info</h3>
             <div className="space-y-4">
-              <HealthBar label="CPU" value={Number(health.cpu_percent)} unit="%" />
-              <HealthBar label="RAM" value={Number(health.ram_percent)} unit="%" />
-              <HealthBar label="Disk" value={Number(health.disk_percent)} unit="%" />
-              {health.temperature !== null && (
-                <HealthBar label="Temperature" value={Number(health.temperature)} unit="C" />
-              )}
-              {health.uptime_secs !== null && (
+              {machine.esp32_device_id && (
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Uptime</span>
-                  <span className="text-foreground font-medium">
-                    {Math.floor(health.uptime_secs / 3600)}h {Math.floor((health.uptime_secs % 3600) / 60)}m
-                  </span>
+                  <span className="text-muted-foreground">ESP32 Device ID</span>
+                  <span className="text-foreground font-mono font-medium">{machine.esp32_device_id}</span>
                 </div>
               )}
-              {health.connected_clients !== null && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Connected Clients</span>
-                  <span className="text-foreground font-medium">{health.connected_clients}</span>
-                </div>
-              )}
-              <p className="text-[11px] text-muted-foreground/60 pt-2">
-                Updated: <LocalTime date={health.recorded_at} />
-              </p>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Total Sessions</span>
+                <span className="text-foreground font-medium">{playtabSessionCount}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Total Earnings</span>
+                <span className="text-emerald-400 font-semibold">
+                  {`\u20B1${(playtabTotalEarnings / 100).toLocaleString()}`}
+                </span>
+              </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-6">No health data yet</p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <ActivityFeed activities={activitiesRes.data ?? []} />
