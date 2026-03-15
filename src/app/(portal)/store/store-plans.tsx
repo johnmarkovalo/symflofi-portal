@@ -8,6 +8,7 @@ import { useToast } from "@/components/toast";
 type Plan = {
   name: string;
   label: string;
+  product: string;
   price: string;
   priceCents: number;
   originalPriceCents?: number;
@@ -122,6 +123,7 @@ export default function StorePlans({
         plan: {
           name: licenseTier.name,
           label: licenseTier.label,
+          product: licenseTier.name.startsWith("playtab_") ? "playtab" : "symflofi",
           price: `₱${(licenseTier.priceCents / 100).toLocaleString()}`,
           priceCents: licenseTier.priceCents,
           period: "/year",
@@ -409,9 +411,26 @@ export default function StorePlans({
         )}
       </div>
 
-      {/* Individual Plans */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {plans.map((plan) => {
+      {/* Individual Plans — grouped by product */}
+      {(() => {
+        const products = [...new Set(plans.map((p) => p.product))];
+        const productLabels: Record<string, string> = {
+          symflofi: "SymfloFi — Piso WiFi",
+          playtab: "PlayTab — Tablet Gaming",
+          symflokiosk: "SymfloKiosk — Payment Kiosk",
+        };
+        return products.map((product) => (
+          <div key={product} className="mb-8">
+            {products.length > 1 && (
+              <div className="flex items-center gap-3 mb-4">
+                <h3 className="text-base font-semibold text-foreground">
+                  {productLabels[product] ?? product}
+                </h3>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            )}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {plans.filter((p) => p.product === product).map((plan) => {
           const qty = getQuantity(plan.name);
           const inCart = qty > 0;
           return (
@@ -496,8 +515,11 @@ export default function StorePlans({
               )}
             </div>
           );
-        })}
-      </div>
+              })}
+            </div>
+          </div>
+        ));
+      })()}
 
       {/* Distributor Bulk Packages */}
       {bulkPackages.length > 0 && (

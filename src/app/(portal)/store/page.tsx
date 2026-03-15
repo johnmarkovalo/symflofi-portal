@@ -80,6 +80,7 @@ export default async function StorePage() {
       .select("*")
       .eq("is_public", true)
       .gt("price_cents", 0)
+      .order("product", { ascending: true })
       .order("sort_order", { ascending: true }),
     supabase
       .from("distributor_tiers")
@@ -95,6 +96,7 @@ export default async function StorePage() {
     return {
       name: tier.name,
       label: tier.label,
+      product: (tier as Record<string, unknown>).product as string ?? "symflofi",
       price: formatTierPrice(discountedCents),
       priceCents: discountedCents,
       originalPriceCents: discountPct > 0 ? tier.price_cents : undefined,
