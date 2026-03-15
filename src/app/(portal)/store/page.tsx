@@ -125,6 +125,7 @@ export default async function StorePage() {
   const licenseTierPrices = (tiers ?? []).map((t: LicenseTier) => ({
     name: t.name,
     label: t.label,
+    product: (t as Record<string, unknown>).product as string ?? "symflofi",
     priceCents: t.price_cents,
   }));
 

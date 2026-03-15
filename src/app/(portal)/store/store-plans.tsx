@@ -31,6 +31,7 @@ type DistributorPackage = {
 type LicenseTierPrice = {
   name: string;
   label: string;
+  product: string;
   priceCents: number;
 };
 
@@ -594,11 +595,25 @@ export default function StorePlans({
                       }
                       className="w-full px-3 py-2.5 pr-9 rounded-xl border border-border bg-card/60 text-sm text-foreground focus:outline-none focus:border-primary/40 appearance-none cursor-pointer"
                     >
-                      {licenseTierPrices.map((t) => (
-                        <option key={t.name} value={t.name}>
-                          {t.label} — ₱{(t.priceCents / 100).toLocaleString()}/yr
-                        </option>
-                      ))}
+                      {(() => {
+                        const products = [...new Set(licenseTierPrices.map((t) => t.product))];
+                        const productLabels: Record<string, string> = {
+                          symflofi: "SymfloFi",
+                          playtab: "PlayTab",
+                          symflokiosk: "SymfloKiosk",
+                        };
+                        return products.map((product) => (
+                          <optgroup key={product} label={productLabels[product] ?? product}>
+                            {licenseTierPrices
+                              .filter((t) => t.product === product)
+                              .map((t) => (
+                                <option key={t.name} value={t.name}>
+                                  {t.label} — ₱{(t.priceCents / 100).toLocaleString()}/yr
+                                </option>
+                              ))}
+                          </optgroup>
+                        ));
+                      })()}
                     </select>
                     <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
