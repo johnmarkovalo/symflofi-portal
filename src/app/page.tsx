@@ -100,6 +100,21 @@ function buildFeatureList(tier: LicenseTier): string[] {
   return features;
 }
 
+function buildPlayTabFeatureList(tier: LicenseTier): string[] {
+  const features: string[] = [];
+  features.push("Coin-operated timer system");
+  if (tier.cloud_dashboard) features.push("Cloud dashboard & monitoring");
+  if (tier.remote_access) features.push("Remote device management");
+  const hist = tier.sales_history_days;
+  features.push(
+    hist === -1
+      ? "Unlimited session history"
+      : `${hist} day${hist !== 1 ? "s" : ""} session history`,
+  );
+  if (tier.support_level === "priority") features.push("Priority support");
+  return features;
+}
+
 const stats = [
   { value: "500+", label: "Active Machines" },
   { value: "50+", label: "Operators" },
@@ -108,11 +123,37 @@ const stats = [
 
 export default async function LandingPage() {
   const supabase = await createClient();
-  const { data: tiers } = await supabase
+
+  // Try fetching with product filter; fall back to unfiltered if column doesn't exist yet
+  let tiers: LicenseTier[] | null = null;
+  let playtabTiers: LicenseTier[] | null = null;
+
+  const { data: sfTiers, error: sfErr } = await supabase
     .from("license_tiers")
     .select("*")
     .eq("is_public", true)
+    .eq("product", "symflofi")
     .order("sort_order", { ascending: true });
+
+  if (sfErr || (sfTiers && sfTiers.length === 0)) {
+    // product column may not exist yet — fall back to fetching all public tiers
+    const { data: allTiers } = await supabase
+      .from("license_tiers")
+      .select("*")
+      .eq("is_public", true)
+      .order("sort_order", { ascending: true });
+    tiers = allTiers;
+  } else {
+    tiers = sfTiers;
+    // Only try PlayTab query if the product column exists
+    const { data: ptTiers } = await supabase
+      .from("license_tiers")
+      .select("*")
+      .eq("is_public", true)
+      .eq("product", "playtab")
+      .order("sort_order", { ascending: true });
+    playtabTiers = ptTiers;
+  }
 
   const plans = (tiers ?? []).map((tier: LicenseTier) => ({
     name: tier.label,
@@ -125,6 +166,15 @@ export default async function LandingPage() {
           : "",
     features: buildFeatureList(tier),
     cta: tier.price_cents === 0 ? "Get Started" : `Get ${tier.label} License`,
+    highlight: tier.is_highlighted,
+  }));
+
+  const playtabPlans = (playtabTiers ?? []).map((tier: LicenseTier) => ({
+    name: tier.label,
+    price: formatTierPrice(tier.price_cents),
+    period: tier.duration_days === 365 ? "/year" : `/${tier.duration_days}d`,
+    features: buildPlayTabFeatureList(tier),
+    cta: `Get ${tier.label} License`,
     highlight: tier.is_highlighted,
   }));
 
@@ -157,19 +207,22 @@ export default async function LandingPage() {
           <div className="animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Cloud-Managed WiFi Vending System
+              Cloud-Managed Vending Platform
             </div>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] animate-fade-in-up delay-100">
-            The Modern{" "}
+            The{" "}
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Piso WiFi
+              SymfloFi
             </span>{" "}
             Platform
           </h1>
-          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
-            Cloud-connected WiFi vending with built-in remote monitoring,
-            bandwidth control, subscriber plans, and license management.
+          <p className="mt-4 text-lg sm:text-xl text-muted-foreground/80 max-w-2xl mx-auto animate-fade-in-up delay-150">
+            Piso WiFi &middot; PlayTab Gaming &middot; Cloud-Managed
+          </p>
+          <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
+            From Piso WiFi machines to coin-operated gaming tablets &mdash;
+            manage, monitor, and monetize your vending devices from one SymfloFi cloud platform.
           </p>
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
             <Link
@@ -198,6 +251,48 @@ export default async function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Products */}
+      <section
+        id="products"
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20"
+      >
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+            SymfloFi Products
+          </h2>
+          <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
+            Two products, one cloud platform. Choose what fits your business.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+          <a
+            href="#features"
+            className="group p-6 sm:p-8 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
+          >
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4 group-hover:bg-indigo-500/15 transition-colors">
+              <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">SymfloFi</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Piso WiFi vending system with coin slot support, captive portal, bandwidth management, voucher system, and cloud monitoring.
+            </p>
+          </a>
+          <div className="group p-6 sm:p-8 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-emerald-500/30 transition-all hover:shadow-lg hover:shadow-emerald-500/5">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4 group-hover:bg-emerald-500/15 transition-colors">
+              <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">PlayTab</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Coin-operated tablet gaming kiosk. Accept coins, manage game sessions, track usage, and monitor devices remotely.
+            </p>
           </div>
         </div>
       </section>
@@ -313,8 +408,21 @@ export default async function LandingPage() {
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
             Start free, upgrade when you are ready. All plans include OTA
-            firmware updates.
+            updates.
           </p>
+        </div>
+
+        {/* SymfloFi Plans */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">SymfloFi</h3>
+            <p className="text-sm text-muted-foreground">Piso WiFi vending system</p>
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
           {plans.map((plan) => (
@@ -378,6 +486,85 @@ export default async function LandingPage() {
             </div>
           ))}
         </div>
+
+        {/* PlayTab Plans */}
+        {playtabPlans.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-16 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">PlayTab</h3>
+                <p className="text-sm text-muted-foreground">Coin-operated tablet gaming kiosk</p>
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
+              {playtabPlans.map((plan) => (
+                <div
+                  key={plan.name}
+                  className={`relative flex flex-col p-6 sm:p-7 rounded-2xl border transition-all ${
+                    plan.highlight
+                      ? "bg-emerald-500/5 border-emerald-500/30 shadow-xl shadow-emerald-500/10 sm:scale-[1.02]"
+                      : "bg-card/60 backdrop-blur-sm border-border hover:border-emerald-500/20"
+                  }`}
+                >
+                  {plan.highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-semibold">
+                      Most Popular
+                    </div>
+                  )}
+                  <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
+                  <div className="mt-5 mb-6">
+                    <span className="text-3xl font-bold text-foreground">
+                      {plan.price}
+                    </span>
+                    {plan.period && (
+                      <span className="text-sm text-muted-foreground">
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f) => (
+                      <li
+                        key={f}
+                        className="flex items-center gap-2 text-sm text-muted-foreground"
+                      >
+                        <svg
+                          className="w-4 h-4 text-emerald-400 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/signup"
+                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${
+                      plan.highlight
+                        ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25"
+                        : "border border-border text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* CTA */}
@@ -426,7 +613,7 @@ export default async function LandingPage() {
                 <span className="text-sm font-bold">SymfloFi</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Cloud-managed WiFi vending platform.
+                Cloud-managed vending platform.
               </p>
             </div>
             <div>
@@ -434,6 +621,22 @@ export default async function LandingPage() {
                 Product
               </h4>
               <ul className="space-y-2">
+                <li>
+                  <a
+                    href="#products"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    SymfloFi
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#products"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    PlayTab
+                  </a>
+                </li>
                 <li>
                   <a
                     href="#features"
