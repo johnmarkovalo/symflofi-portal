@@ -198,11 +198,12 @@ async function processPaymentEvent(event: WebhookEvent) {
 
           const { data: tier } = await supabase
             .from("license_tiers")
-            .select("duration_days")
+            .select("duration_days, product")
             .eq("name", item.tier_name)
             .single();
 
           const durationDays = tier?.duration_days ?? 365;
+          const tierProduct = tier?.product ?? (item.tier_name.startsWith("playtab_") ? "playtab" : "symflofi");
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + durationDays);
 
@@ -212,6 +213,7 @@ async function processPaymentEvent(event: WebhookEvent) {
             p_expires_at: expiresAt.toISOString(),
             p_quantity: remaining,
             p_order_id: order.id,
+            p_product: tierProduct,
           });
 
           if (rpcError) {

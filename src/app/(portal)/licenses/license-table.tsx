@@ -59,6 +59,10 @@ export default function LicenseTable({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpId, setOtpId] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [recipientInfo, setRecipientInfo] = useState<{ name: string | null; email: string } | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -67,7 +71,6 @@ export default function LicenseTable({
     (l) => !l.is_activated && l.operator_id === operatorId
   );
   const canTransfer = !isAdmin && transferable.length > 0;
-  const [confirmStep, setConfirmStep] = useState(false);
 
   const allTransferableSelected =
     transferable.length > 0 && transferable.every((l) => selected.has(l.id));
@@ -93,107 +96,97 @@ export default function LicenseTable({
     setError("");
     setSuccess("");
     setRecipient("");
-    setConfirmStep(false);
+    setOtpStep(false);
+    setOtpId("");
+    setOtpCode("");
+    setRecipientInfo(null);
     setShowTransfer(true);
   }
 
-  async function handleTransfer(e: React.FormEvent) {
+  async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
-    if (selected.size === 0) return;
+    if (selected.size === 0 || !recipient.trim()) return;
     setLoading(true);
     setError("");
-    setSuccess("");
 
     const supabase = createClient();
-
-    // Get current operator
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       setError("Not authenticated");
       setLoading(false);
       return;
     }
 
-    const { data: currentOperator } = await supabase
-      .from("operators")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .single();
-
-    if (!currentOperator) {
-      setError("Operator not found");
-      setLoading(false);
-      return;
-    }
-
-    // Find recipient by email, operator code, or operator ID
-    const trimmed = recipient.trim();
-    let recipientQuery = supabase
-      .from("operators")
-      .select("id, name, email");
-
-    if (trimmed.includes("@")) {
-      recipientQuery = recipientQuery.eq("email", trimmed.toLowerCase());
-    } else if (trimmed.toUpperCase().startsWith("SYMF-")) {
-      recipientQuery = recipientQuery.eq("operator_code", trimmed.toUpperCase());
-    } else {
-      recipientQuery = recipientQuery.eq("id", trimmed);
-    }
-
-    const { data: recipientOp } = await recipientQuery.single();
-
-    if (!recipientOp) {
-      setError(`No operator found with: ${recipient}`);
-      setLoading(false);
-      return;
-    }
-
-    if (recipientOp.id === currentOperator.id) {
-      setError("Cannot transfer to yourself");
-      setLoading(false);
-      return;
-    }
-
-    // Get selected license details
-    const selectedLicenses = licenses.filter((l) => selected.has(l.id));
-
-    // Validate all selected are transferable
-    const invalid = selectedLicenses.find(
-      (l) => l.is_activated || l.operator_id !== currentOperator.id
-    );
-    if (invalid) {
-      setError(`License ${invalid.key} is not transferable`);
-      setLoading(false);
-      return;
-    }
-
-    // Transfer all selected keys
-    const { error: updateError } = await supabase
-      .from("license_keys")
-      .update({ operator_id: recipientOp.id })
-      .in("id", selectedLicenses.map((l) => l.id));
-
-    if (updateError) {
-      setError(updateError.message);
-      setLoading(false);
-      return;
-    }
-
-    // Log all transfers
-    await supabase.from("license_audit_log").insert(
-      selectedLicenses.map((l) => ({
-        license_key_id: l.id,
-        license_key: l.key,
-        event: "transferred",
-        from_operator_id: currentOperator.id,
-        to_operator_id: recipientOp.id,
-        actor_id: currentOperator.id,
-        actor_role: "operator",
-        note: `Transferred to ${recipientOp.name || recipientOp.email}`,
-      }))
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transfer-otp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "send",
+          license_ids: [...selected],
+          recipient_identifier: recipient.trim(),
+        }),
+      }
     );
 
-    const msg = `${selectedLicenses.length} license${selectedLicenses.length !== 1 ? "s" : ""} transferred to ${recipientOp.name || recipientOp.email}`;
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Failed to send verification code");
+      setLoading(false);
+      return;
+    }
+
+    setOtpId(data.otp_id);
+    setRecipientInfo(data.recipient);
+    setOtpStep(true);
+    setLoading(false);
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!otpId || !otpCode.trim()) return;
+    setLoading(true);
+    setError("");
+
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError("Not authenticated");
+      setLoading(false);
+      return;
+    }
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/transfer-otp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          action: "verify",
+          otp_id: otpId,
+          otp_code: otpCode.trim(),
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Verification failed");
+      setLoading(false);
+      return;
+    }
+
+    const recipientName = data.recipient?.name || data.recipient?.email || "operator";
+    const msg = `${data.transferred} license${data.transferred !== 1 ? "s" : ""} transferred to ${recipientName}`;
     setSuccess(msg);
     toast(msg);
     setSelected(new Set());
@@ -330,81 +323,130 @@ export default function LicenseTable({
           <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h3 className="text-lg font-bold text-foreground mb-1">Transfer Licenses</h3>
             <p className="text-sm text-muted-foreground mb-5">
-              Transfer {selected.size} unbound key{selected.size !== 1 ? "s" : ""} to another operator
+              {otpStep
+                ? `Enter the verification code sent to your email`
+                : `Transfer ${selected.size} unbound key${selected.size !== 1 ? "s" : ""} to another operator`}
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); if (!confirmStep) { setConfirmStep(true); } else { handleTransfer(e); } }} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1.5">
-                  Recipient Operator Code or Email
-                </label>
-                <input
-                  type="text"
-                  value={recipient}
-                  onChange={(e) => { setRecipient(e.target.value); setConfirmStep(false); }}
-                  required
-                  autoFocus
-                  className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-                  placeholder="SYMF-XX00-XXXX-XXXX or email"
-                />
-              </div>
+            {!otpStep ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                    Recipient Operator Code or Email
+                  </label>
+                  <input
+                    type="text"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    required
+                    autoFocus
+                    className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                    placeholder="SYMF-XX00-XXXX-XXXX or email"
+                  />
+                </div>
 
-              {/* Selected keys preview */}
-              <div className="max-h-32 overflow-y-auto rounded-xl bg-muted/50 border border-border p-3 space-y-1">
-                {licenses
-                  .filter((l) => selected.has(l.id))
-                  .map((l) => (
-                    <div key={l.id} className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-foreground">{l.key}</span>
-                      <TierBadge tier={l.tier} />
-                    </div>
-                  ))}
-              </div>
+                {/* Selected keys preview */}
+                <div className="max-h-32 overflow-y-auto rounded-xl bg-muted/50 border border-border p-3 space-y-1">
+                  {licenses
+                    .filter((l) => selected.has(l.id))
+                    .map((l) => (
+                      <div key={l.id} className="flex items-center justify-between text-xs">
+                        <span className="font-mono text-foreground">{l.key}</span>
+                        <TierBadge tier={l.tier} />
+                      </div>
+                    ))}
+                </div>
 
-              {/* Irreversible warning on confirm step */}
-              {confirmStep && !success && (
+                {error && (
+                  <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
+                    {error}
+                  </p>
+                )}
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowTransfer(false)}
+                    disabled={loading}
+                    className="flex-1 bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50 transition-all shadow-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/25"
+                  >
+                    {loading ? "Sending code..." : "Send Verification Code"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                {recipientInfo && (
+                  <div className="rounded-xl bg-muted/50 border border-border px-4 py-3">
+                    <p className="text-xs text-muted-foreground">Transferring to</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {recipientInfo.name || recipientInfo.email}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                    6-Digit Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    required
+                    autoFocus
+                    maxLength={6}
+                    inputMode="numeric"
+                    className="w-full rounded-xl bg-muted border border-border px-4 py-3 text-center text-lg font-mono tracking-[0.3em] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                    placeholder="000000"
+                  />
+                </div>
+
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
                   <p className="text-sm font-medium text-amber-400 mb-1">This action cannot be undone</p>
                   <p className="text-xs text-amber-400/80">
                     Once transferred, you will lose access to {selected.size === 1 ? "this license" : `these ${selected.size} licenses`}. Only an admin can transfer them back.
                   </p>
                 </div>
-              )}
 
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
-                  {error}
-                </p>
-              )}
+                {error && (
+                  <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
+                    {error}
+                  </p>
+                )}
 
-              {success && (
-                <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
-                  {success}
-                </p>
-              )}
+                {success && (
+                  <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2.5">
+                    {success}
+                  </p>
+                )}
 
-              <div className="flex gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => { if (confirmStep) { setConfirmStep(false); } else { setShowTransfer(false); } }}
-                  disabled={loading}
-                  className="flex-1 bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all disabled:opacity-50"
-                >
-                  {confirmStep ? "Back" : "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || !!success}
-                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50 transition-all shadow-lg ${
-                    confirmStep
-                      ? "bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/25"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/25"
-                  }`}
-                >
-                  {loading ? "Transferring..." : confirmStep ? "Confirm Transfer" : "Transfer"}
-                </button>
-              </div>
-            </form>
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setOtpStep(false); setOtpCode(""); setError(""); }}
+                    disabled={loading}
+                    className="flex-1 bg-muted text-foreground rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted/80 border border-border transition-all disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading || otpCode.length !== 6 || !!success}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50 transition-all shadow-lg bg-amber-500 text-white hover:bg-amber-600 shadow-amber-500/25"
+                  >
+                    {loading ? "Verifying..." : "Confirm Transfer"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

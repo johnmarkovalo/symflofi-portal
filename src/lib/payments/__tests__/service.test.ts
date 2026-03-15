@@ -131,8 +131,8 @@ describe("handlePaymentWebhook", () => {
     queueResult(null, null, 0);
     // 4. Count existing keys per tier (awaited — { count })
     queueResult(null, null, 0);
-    // 5. Tier lookup for duration (.single())
-    queueResult({ duration_days: 365 });
+    // 5. Tier lookup for duration + product (.single())
+    queueResult({ duration_days: 365, product: "symflofi" });
     // 6. Verify final count (awaited — { count })
     queueResult(null, null, 1);
     // 7. Update keys_generated = true (awaited)
@@ -150,6 +150,7 @@ describe("handlePaymentWebhook", () => {
         p_operator_id: "op-1",
         p_tier: "pro",
         p_quantity: 1,
+        p_product: "symflofi",
       }),
     );
   });
@@ -208,8 +209,8 @@ describe("pollPaymentStatus", () => {
     queueResult(null, null, 0);
     // 5. Count existing keys per tier ({ count })
     queueResult(null, null, 0);
-    // 6. Tier lookup (.single())
-    queueResult({ duration_days: 365 });
+    // 6. Tier lookup for duration + product (.single())
+    queueResult({ duration_days: 365, product: "symflofi" });
     // 7. Verify final count ({ count })
     queueResult(null, null, 1);
     // 8. Update keys_generated (awaited)

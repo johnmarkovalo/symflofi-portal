@@ -1,0 +1,19 @@
+{"timestamp":"2026-03-14T02:30:13.596Z","level":"info","message":"Initializing YouTrack MCP Server","service":"youtrack-mcp","url":"https://youtrack.vocphone.com","tokenLength":61,"toolCount":"dynamic"}
+{"timestamp":"2026-03-14T02:30:13.597Z","level":"info","message":"Client Factory initialized","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:13.598Z","level":"info","message":"Loading dynamic configuration from YouTrack...","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:14.831Z","level":"info","message":"Dynamic configuration loaded successfully","service":"youtrack-mcp","states":12,"priorities":5,"types":8,"resolutions":5,"projects":2}
+{"timestamp":"2026-03-14T02:30:14.832Z","level":"info","message":"Dynamic tool definitions created","service":"youtrack-mcp","toolCount":18,"states":12,"priorities":5}
+{"timestamp":"2026-03-14T02:30:14.832Z","level":"info","message":"YouTrack WebSocket notifications not publicly available","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:14.832Z","level":"info","message":"Using alternative notification method (polling-based)","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:14.832Z","level":"info","message":"Notification system initialized","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:14.832Z","level":"info","message":"Notification system initialized (polling mode)","service":"youtrack-mcp"}
+{"timestamp":"2026-03-14T02:30:14.833Z","level":"info","message":"YouTrack MCP Server connected","service":"youtrack-mcp","transport":"StdioServerTransport","toolCount":18}
+{"timestamp":"2026-03-14T02:30:14.833Z","level":"info","message":"YouTrack MCP Server running with stdio transport","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:15.887Z","level":"info","message":"Initializing YouTrack MCP Server","service":"youtrack-mcp","url":"https://youtrack.vocphone.com","tokenLength":61,"toolCount":"dynamic"}
+{"timestamp":"2026-03-15T13:14:15.889Z","level":"info","message":"Client Factory initialized","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:15.892Z","level":"info","message":"Loading dynamic configuration from YouTrack...","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:15.934Z","level":"info","message":"Initializing YouTrack MCP Server","service":"youtrack-mcp","url":"https://youtrack.vocphone.com","tokenLength":61,"toolCount":"dynamic"}
+{"timestamp":"2026-03-15T13:14:15.936Z","level":"info","message":"Client Factory initialized","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:15.938Z","level":"info","message":"Loading dynamic configuration from YouTrack...","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:46.002Z","level":"warn","message":"Failed to fetch State values: timeout of 30000ms exceeded","service":"youtrack-mcp"}
+{"timestamp":"2026-03-15T13:14:46.010Z","level":"warn","message":"Failed to fetch State values: timeout of 30000ms exceeded","service":"youtrack-mcp"}

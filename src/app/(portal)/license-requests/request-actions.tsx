@@ -25,8 +25,12 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
   async function handleApprove() {
     setLoading(true);
 
+    // Derive product from tier name
+    const product = tier.startsWith("playtab_") ? "playtab" : tier.startsWith("sk_") ? "symflokiosk" : "symflofi";
+    const durationDays = durationMonths * 30;
+
     const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+    expiresAt.setDate(expiresAt.getDate() + durationDays);
 
     // Update request status first so request_id FK is valid
     await supabase
@@ -39,7 +43,8 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
       const { data } = await supabase.rpc("generate_license_key", {
         p_operator_id: operatorId,
         p_tier: tier,
-        p_expires_at: expiresAt.toISOString(),
+        p_duration_days: durationDays,
+        p_product: product,
       });
       // Tag the generated key with the request_id
       if (data) {
@@ -55,6 +60,7 @@ export default function RequestActions({ requestId, operatorId, tier, quantity, 
         p_expires_at: expiresAt.toISOString(),
         p_quantity: quantity,
         p_request_id: requestId,
+        p_product: product,
       });
     }
 

@@ -8,12 +8,19 @@ import { logAdminActionClient } from "@/lib/audit-client";
 
 type Operator = { id: string; name: string | null; email: string };
 type GeneratedKey = { id: string; key: string; tier: string };
-type LicenseTierOption = { name: string; label: string };
+type LicenseTierOption = { name: string; label: string; product: string; duration_days: number };
+
+const PRODUCT_LABELS: Record<string, string> = {
+  symflofi: "SymfloFi",
+  playtab: "PlayTab",
+  symflokiosk: "SymfloKiosk",
+};
 
 export default function GenerateKeyButton({ operators }: { operators: Operator[] }) {
   const [open, setOpen] = useState(false);
   const [tier, setTier] = useState("pro");
   const [tierOptions, setTierOptions] = useState<LicenseTierOption[]>([]);
+  const [product, setProduct] = useState("symflofi");
   const [operatorId, setOperatorId] = useState("");
   const [months, setMonths] = useState(12);
   const [quantity, setQuantity] = useState(1);
@@ -26,26 +33,32 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
   useEffect(() => {
     supabase
       .from("license_tiers")
-      .select("name, label")
+      .select("name, label, product, duration_days")
       .order("sort_order", { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) {
           setTierOptions(data);
-          setTier(data[0].name);
+          // Default to first tier of the default product
+          const first = data.find((t) => t.product === "symflofi") ?? data[0];
+          setProduct(first.product);
+          setTier(first.name);
         }
       });
   }, []);
 
   async function handleGenerate() {
     setLoading(true);
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + months);
+
+    // Look up duration_days from the selected tier
+    const selectedTier = tierOptions.find((t) => t.name === tier && t.product === product);
+    const durationDays = selectedTier?.duration_days ?? months * 30;
 
     if (quantity === 1) {
       const { data, error } = await supabase.rpc("generate_license_key", {
         p_operator_id: operatorId || null,
         p_tier: tier,
-        p_expires_at: expiresAt.toISOString(),
+        p_duration_days: durationDays,
+        p_product: product,
       });
       if (error) {
         toast(error.message, "error");
@@ -54,11 +67,15 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
       }
       setGeneratedKeys([{ id: "1", key: data, tier }]);
     } else {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + durationDays);
+
       const { data, error } = await supabase.rpc("generate_license_keys_bulk", {
         p_operator_id: operatorId || null,
         p_tier: tier,
         p_expires_at: expiresAt.toISOString(),
         p_quantity: quantity,
+        p_product: product,
       });
       if (error) {
         toast(error.message, "error");
@@ -78,8 +95,8 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
     logAdminActionClient({
       action: "license.generate",
       entityType: "license",
-      summary: `Generated ${quantity} ${tier} license key(s)`,
-      details: { tier, operatorId: operatorId || null, quantity, months },
+      summary: `Generated ${quantity} ${tier} (${product}) license key(s)`,
+      details: { tier, product, operatorId: operatorId || null, quantity, months },
     });
   }
 
@@ -160,15 +177,41 @@ export default function GenerateKeyButton({ operators }: { operators: Operator[]
         ) : (
           <div className="space-y-4">
             <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Product</label>
+              <div className="flex gap-1 bg-muted rounded-xl p-1 border border-border">
+                {[...new Set(tierOptions.map((t) => t.product))].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => {
+                      setProduct(p);
+                      const first = tierOptions.find((t) => t.product === p);
+                      if (first) setTier(first.name);
+                    }}
+                    className={`flex-1 text-sm font-medium rounded-lg px-3 py-1.5 transition-all ${
+                      product === p
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {PRODUCT_LABELS[p] ?? p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-muted-foreground mb-1.5">Tier</label>
               <select
                 value={tier}
                 onChange={(e) => setTier(e.target.value)}
                 className="w-full rounded-xl bg-muted border border-border px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                {tierOptions.map((t) => (
-                  <option key={t.name} value={t.name}>{t.label}</option>
-                ))}
+                {tierOptions
+                  .filter((t) => t.product === product)
+                  .map((t) => (
+                    <option key={t.name} value={t.name}>{t.label}</option>
+                  ))}
               </select>
             </div>
 
