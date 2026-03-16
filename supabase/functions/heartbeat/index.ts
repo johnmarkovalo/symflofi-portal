@@ -121,9 +121,11 @@ serve(async (req) => {
       });
 
       // Clean up old snapshots — keep only the latest 100 per machine
-      await supabase.rpc("cleanup_old_health", { p_machine_id: machine.id, p_keep: 100 }).catch(() => {
+      try {
+        await supabase.rpc("cleanup_old_health", { p_machine_id: machine.id, p_keep: 100 });
+      } catch {
         // RPC may not exist yet — non-fatal
-      });
+      }
     }
 
     const responseBody: Record<string, unknown> = { ok: true, wg_ip: wgIp || null };
