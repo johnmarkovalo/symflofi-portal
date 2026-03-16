@@ -59,7 +59,7 @@ export default function MachineProductFilter({
     ? machines
     : machines.filter((m) => (m.product ?? "symflofi") === filter);
 
-  const now = Date.now();
+  const now = Date.now(); // eslint-disable-line react-hooks/purity
 
   const tabs: { key: ProductFilter; label: string }[] = [
     { key: "all", label: `All (${machines.length})` },
