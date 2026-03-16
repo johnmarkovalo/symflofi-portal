@@ -149,12 +149,14 @@ export default async function LicenseInfoPage({
       </div>
 
       {/* License info cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
         <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
           <p className="text-sm font-medium text-foreground mt-1">
-            {license.is_activated ? (
+            {license.is_activated && license.machine_id ? (
               <span className="text-emerald-400">Activated</span>
+            ) : license.is_activated && !license.machine_id ? (
+              <span className="text-amber-400">Unbound</span>
             ) : (
               <span className="text-amber-400">Unactivated</span>
             )}
@@ -190,6 +192,25 @@ export default async function LicenseInfoPage({
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Created</p>
           <p className="text-sm font-medium text-foreground mt-1">
             <LocalTime date={license.created_at} dateOnly />
+          </p>
+        </div>
+        <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Expires</p>
+          <p className="text-sm font-medium text-foreground mt-1">
+            {license.activated_at ? (
+              (() => {
+                const expiry = new Date(new Date(license.activated_at).getTime() + (license.duration_days ?? 365) * 86400000);
+                const isExpired = expiry < new Date();
+                return (
+                  <span className={isExpired ? "text-red-400" : "text-foreground"}>
+                    <LocalTime date={expiry.toISOString()} dateOnly />
+                    {isExpired && " (expired)"}
+                  </span>
+                );
+              })()
+            ) : (
+              <span className="text-muted-foreground">Not activated</span>
+            )}
           </p>
         </div>
       </div>
