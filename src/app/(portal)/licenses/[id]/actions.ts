@@ -125,13 +125,14 @@ export async function revokeLicense(
     return { error: "License is not bound to any machine" };
   }
 
-  // Clear license_key from the machine row so it doesn't block re-activation
+  // Decommission the machine row so it doesn't block re-activation
   if (license.machine_id) {
     await supabase
       .from("machines")
       .update({
-        license_key: "",
-        license_tier: "",
+        license_key: null,
+        license_tier: null,
+        license_expires_at: null,
         is_online: false,
         status: "decommissioned",
       })
