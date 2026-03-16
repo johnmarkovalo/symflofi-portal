@@ -15,6 +15,7 @@ export default function ResetPasswordPage() {
 }
 
 function hasRecoveryCookie(): boolean {
+  if (typeof document === "undefined") return false;
   const found = document.cookie
     .split("; ")
     .some((c) => c.startsWith("password_recovery="));
