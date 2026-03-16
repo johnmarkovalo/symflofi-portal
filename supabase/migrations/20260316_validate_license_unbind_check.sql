@@ -1,24 +1,12 @@
 -- ============================================================================
--- Migration: Add is_revoked flag to license_keys
+-- Migration: Prevent decommissioned machines from re-binding unbound licenses
 -- Date: 2026-03-16
--- Description: Prevents revoked/unbound licenses from being re-activated
---              by devices calling validate_license()
+-- Description: When a license is unbound (unbind-only, not full revoke),
+--              the old decommissioned machine should not be able to
+--              re-activate the license by calling validate_license().
+--              Only a new machine or explicit portal action can re-bind.
 -- ============================================================================
 
--- 1. Add is_revoked column
-ALTER TABLE license_keys
-  ADD COLUMN IF NOT EXISTS is_revoked BOOLEAN NOT NULL DEFAULT false;
-
--- Mark any currently unbound licenses (is_activated=false, machine_id=null,
--- activated_at IS NOT NULL) as revoked — these were previously activated
--- then unbound, so they should not auto-reactivate.
-UPDATE license_keys
-SET is_revoked = true
-WHERE is_activated = false
-  AND machine_id IS NULL
-  AND activated_at IS NOT NULL;
-
--- 2. Update validate_license() to reject revoked licenses
 CREATE OR REPLACE FUNCTION validate_license(
   p_license_key TEXT,
   p_machine_uuid TEXT,
@@ -82,8 +70,8 @@ BEGIN
   END IF;
 
   -- 6a. Check if license was unbound (deactivated but not revoked).
-  --      The old decommissioned machine must not re-bind automatically;
-  --      only a NEW machine (or explicit portal re-activation) should pick it up.
+  --     The old decommissioned machine must not re-bind automatically;
+  --     only a NEW machine (or explicit portal re-activation) should pick it up.
   IF NOT v_key.is_activated
      AND v_key.machine_id IS NULL
      AND v_key.activated_at IS NOT NULL
