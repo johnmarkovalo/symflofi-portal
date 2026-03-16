@@ -142,12 +142,13 @@ export async function revokeLicense(
   const updateFields: Record<string, unknown> = {
     machine_id: null,
     is_activated: false,
-    is_revoked: true,
   };
 
-  // Optionally unassign operator too (full revoke — admin only)
+  // Full revoke — permanently disable the license (admin only)
+  // Unbind only — detach from machine but allow reuse on another device
   if (!options.unbindOnly) {
     updateFields.operator_id = null;
+    updateFields.is_revoked = true;
   }
 
   const { error: updateError } = await supabase
