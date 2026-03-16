@@ -596,22 +596,16 @@ export default function StorePlans({
                       className="w-full px-3 py-2.5 pr-9 rounded-xl border border-border bg-card/60 text-sm text-foreground focus:outline-none focus:border-primary/40 appearance-none cursor-pointer"
                     >
                       {(() => {
-                        const products = [...new Set(licenseTierPrices.map((t) => t.product))];
                         const productLabels: Record<string, string> = {
                           symflofi: "SymfloFi",
                           playtab: "PlayTab",
                           symflokiosk: "SymfloKiosk",
                         };
-                        return products.map((product) => (
-                          <optgroup key={product} label={productLabels[product] ?? product}>
-                            {licenseTierPrices
-                              .filter((t) => t.product === product)
-                              .map((t) => (
-                                <option key={t.name} value={t.name}>
-                                  {t.label} — ₱{(t.priceCents / 100).toLocaleString()}/yr
-                                </option>
-                              ))}
-                          </optgroup>
+                        const hasMultipleProducts = new Set(licenseTierPrices.map((t) => t.product)).size > 1;
+                        return licenseTierPrices.map((t) => (
+                          <option key={t.name} value={t.name}>
+                            {hasMultipleProducts ? `[${productLabels[t.product] ?? t.product}] ` : ""}{t.label} — ₱{(t.priceCents / 100).toLocaleString()}/yr
+                          </option>
                         ));
                       })()}
                     </select>
