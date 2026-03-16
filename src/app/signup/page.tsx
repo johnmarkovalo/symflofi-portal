@@ -86,6 +86,14 @@ function RegisterForm() {
       return;
     }
 
+    // Supabase returns empty identities when the email already exists
+    // (security feature to prevent email enumeration) — no email is sent in this case
+    if (authData.user.identities?.length === 0) {
+      setError("This email is already associated with an account. Please sign in instead.");
+      setLoading(false);
+      return;
+    }
+
     // 2. Create operator record via RPC (bypasses RLS for new signups)
     const { error: opError } = await supabase.rpc("create_operator_on_signup", {
       p_auth_user_id: authData.user.id,
@@ -97,13 +105,6 @@ function RegisterForm() {
     if (opError) {
       console.error("Operator creation failed:", opError.message);
       setError("This email is already associated with an account. Please sign in instead.");
-      setLoading(false);
-      return;
-    }
-
-    // Check if email confirmation is required
-    if (authData.user.identities?.length === 0) {
-      setSuccess(true);
       setLoading(false);
       return;
     }
