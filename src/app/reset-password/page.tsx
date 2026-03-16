@@ -14,32 +14,30 @@ export default function ResetPasswordPage() {
   );
 }
 
+function hasRecoveryCookie(): boolean {
+  const found = document.cookie
+    .split("; ")
+    .some((c) => c.startsWith("password_recovery="));
+  if (found) {
+    // Clear the cookie after reading
+    document.cookie = "password_recovery=; path=/reset-password; max-age=0";
+  }
+  return found;
+}
+
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verified, setVerified] = useState(false);
+  // Check cookie synchronously on first render (before effects run)
+  const [verified, setVerified] = useState(hasRecoveryCookie);
   const [error, setError] = useState("");
   const supabase = createClient();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for the recovery cookie set by the auth callback.
-    // This ensures only users who came from a password reset email
-    // can access this page (not any logged-in user).
-    const hasRecoveryCookie = document.cookie
-      .split("; ")
-      .some((c) => c.startsWith("password_recovery="));
-
-    if (hasRecoveryCookie) {
-      setVerified(true);
-      // Clear the cookie after reading
-      document.cookie = "password_recovery=; path=/reset-password; max-age=0";
-      return;
-    }
-
-    // Also listen for PASSWORD_RECOVERY event (non-PKCE flows)
+    // Listen for PASSWORD_RECOVERY event (non-PKCE flows)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setVerified(true);
