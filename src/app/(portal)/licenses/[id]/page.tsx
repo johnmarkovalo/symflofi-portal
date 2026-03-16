@@ -153,7 +153,9 @@ export default async function LicenseInfoPage({
         <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border p-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Status</p>
           <p className="text-sm font-medium text-foreground mt-1">
-            {license.is_activated && license.machine_id ? (
+            {license.is_revoked ? (
+              <span className="text-red-400">Revoked</span>
+            ) : license.is_activated && license.machine_id ? (
               <span className="text-emerald-400">Activated</span>
             ) : license.is_activated && !license.machine_id ? (
               <span className="text-amber-400">Unbound</span>

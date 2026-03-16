@@ -23,10 +23,10 @@ export async function assignLicenseOperator(licenseId: string, operatorId: strin
 
   const previousOperatorId = license.operator_id;
 
-  // Update operator_id
+  // Update operator_id (clear revoked flag when re-assigning)
   const { error: updateError } = await supabase
     .from("license_keys")
-    .update({ operator_id: operatorId })
+    .update({ operator_id: operatorId, is_revoked: false })
     .eq("id", licenseId);
 
   if (updateError) return { error: updateError.message };
@@ -142,6 +142,7 @@ export async function revokeLicense(
   const updateFields: Record<string, unknown> = {
     machine_id: null,
     is_activated: false,
+    is_revoked: true,
   };
 
   // Optionally unassign operator too (full revoke — admin only)
