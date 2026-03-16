@@ -10,7 +10,7 @@ SET is_activated = false, machine_id = NULL
 WHERE key = 'PTLI-DPWC-EYUR-RVQE';
 
 UPDATE machines
-SET license_key = NULL, license_tier = NULL, license_expires_at = NULL, status = 'decommissioned'
+SET license_key = '', license_tier = NULL, license_expires_at = NULL, status = 'decommissioned'
 WHERE machine_uuid = 'dae1efc57b2264ee4da4256e3c744559';
 
 -- ============================================================================
