@@ -14,38 +14,27 @@ export default function ResetPasswordPage() {
   );
 }
 
-function hasRecoveryCookie(): boolean {
-  if (typeof document === "undefined") return false;
-  const found = document.cookie
-    .split("; ")
-    .some((c) => c.startsWith("password_recovery="));
-  if (found) {
-    // Clear the cookie after reading
-    document.cookie = "password_recovery=; path=/reset-password; max-age=0";
-  }
-  return found;
-}
-
 function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  // Check cookie synchronously on first render (before effects run)
-  const [verified, setVerified] = useState(hasRecoveryCookie);
+  const [status, setStatus] = useState<"checking" | "verified" | "invalid">("checking");
   const [error, setError] = useState("");
   const supabase = createClient();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listen for PASSWORD_RECOVERY event (non-PKCE flows)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setVerified(true);
-      }
+    let cancelled = false;
+
+    // Check if the user has a valid session (established by the auth callback
+    // after exchanging the recovery code from the email link).
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled) return;
+      setStatus(user ? "verified" : "invalid");
     });
 
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; };
   }, [supabase.auth]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,7 +69,15 @@ function ResetPasswordForm() {
     router.refresh();
   }
 
-  if (!verified) {
+  if (status === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-muted-foreground">Verifying...</div>
+      </div>
+    );
+  }
+
+  if (status === "invalid") {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
