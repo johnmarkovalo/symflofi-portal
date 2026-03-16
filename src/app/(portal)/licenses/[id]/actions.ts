@@ -130,9 +130,9 @@ export async function revokeLicense(
     await supabase
       .from("machines")
       .update({
-        license_key: null,
-        license_tier: null,
-        license_expires_at: null,
+        license_key: "",
+        license_tier: "",
+        is_online: false,
         status: "decommissioned",
       })
       .eq("id", license.machine_id);

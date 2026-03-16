@@ -62,7 +62,10 @@ serve(async (req) => {
       const notProvisioned = !machine.wg_ip;
 
       if (keyChanged || notProvisioned) {
-        // Provision peer on VPS
+        // Provision peer on VPS — must succeed before we return wg_ip to device.
+        // If provisioning fails after a key change, the old wg_ip is stale
+        // (VPS doesn't have the new public key) so we must NOT return it.
+        let provisioned = false;
         try {
           const vpsResp = await fetch(`${VPS_API_URL}/api/peers`, {
             method: "POST",
@@ -81,6 +84,7 @@ serve(async (req) => {
             wgIp = vpsData.ip;
             updateData.wg_public_key = wg_public_key;
             updateData.wg_ip = wgIp;
+            provisioned = true;
             console.log(`WG peer provisioned: ${machine_uuid} → ${wgIp}`);
           } else {
             const errText = await vpsResp.text();
@@ -88,6 +92,13 @@ serve(async (req) => {
           }
         } catch (err) {
           console.error(`VPS provisioning error: ${err.message}`);
+        }
+
+        // If provisioning failed and key changed, the old wg_ip is unusable
+        // because the VPS peer has the wrong public key. Clear it so the device
+        // doesn't attempt a doomed tunnel setup.
+        if (!provisioned && keyChanged) {
+          wgIp = null;
         }
       }
     }

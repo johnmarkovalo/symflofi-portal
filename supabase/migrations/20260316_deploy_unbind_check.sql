@@ -10,7 +10,7 @@ SET is_activated = false, machine_id = NULL
 WHERE key = 'PTLI-DPWC-EYUR-RVQE';
 
 UPDATE machines
-SET license_key = '', license_tier = NULL, license_expires_at = NULL, status = 'decommissioned'
+SET license_key = '', license_tier = '', license_expires_at = now(), status = 'decommissioned', is_online = false
 WHERE machine_uuid = 'dae1efc57b2264ee4da4256e3c744559';
 
 -- ============================================================================
@@ -110,9 +110,9 @@ BEGIN
       AND machine_uuid != p_machine_uuid
   LOOP
     UPDATE machines
-    SET license_key = NULL,
-        license_tier = NULL,
-        license_expires_at = NULL,
+    SET license_key = '',
+        license_tier = '',
+        license_expires_at = now(),
         is_online = false,
         status = 'decommissioned'
     WHERE id = v_old_machine.id;

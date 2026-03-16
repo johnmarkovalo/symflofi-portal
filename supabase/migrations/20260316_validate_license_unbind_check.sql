@@ -102,9 +102,9 @@ BEGIN
   LOOP
     -- Decommission the old machine record
     UPDATE machines
-    SET license_key = NULL,
-        license_tier = NULL,
-        license_expires_at = NULL,
+    SET license_key = '',
+        license_tier = '',
+        license_expires_at = now(),
         is_online = false,
         status = 'decommissioned'
     WHERE id = v_old_machine.id;
