@@ -13,6 +13,9 @@ type License = {
   tier: string;
   product: string | null;
   is_activated: boolean;
+  is_revoked: boolean;
+  activated_at: string | null;
+  duration_days: number;
   created_at: string;
   operator_id: string | null;
   operators: { name: string | null; email: string } | null;
@@ -47,7 +50,14 @@ function ProductBadge({ product }: { product: string | null }) {
   );
 }
 
-function StatusBadge({ activated }: { activated: boolean }) {
+function StatusBadge({ activated, revoked }: { activated: boolean; revoked: boolean }) {
+  if (revoked) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border bg-red-500/10 text-red-400 border-red-500/20">
+        revoked
+      </span>
+    );
+  }
   return activated ? (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
       activated
@@ -57,6 +67,13 @@ function StatusBadge({ activated }: { activated: boolean }) {
       unbound
     </span>
   );
+}
+
+function getExpiresAt(lic: License): Date | null {
+  if (!lic.activated_at) return null;
+  const activated = new Date(lic.activated_at);
+  activated.setDate(activated.getDate() + lic.duration_days);
+  return activated;
 }
 
 export default function LicenseTable({
@@ -282,6 +299,7 @@ export default function LicenseTable({
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Product</th>
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Tier</th>
               <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Status</th>
+              <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Expires</th>
               {isAdmin && (
                 <th className="text-left px-4 py-3.5 font-medium text-muted-foreground text-xs uppercase tracking-wider md:px-5">Operator</th>
               )}
@@ -318,7 +336,19 @@ export default function LicenseTable({
                   <td className="px-5 py-4 font-mono text-sm text-foreground">{lic.key}</td>
                   <td className="px-5 py-4"><ProductBadge product={lic.product} /></td>
                   <td className="px-5 py-4"><TierBadge tier={lic.tier} /></td>
-                  <td className="px-5 py-4"><StatusBadge activated={lic.is_activated} /></td>
+                  <td className="px-5 py-4"><StatusBadge activated={lic.is_activated} revoked={lic.is_revoked} /></td>
+                  <td className="px-5 py-4 text-muted-foreground">
+                    {(() => {
+                      const expires = getExpiresAt(lic);
+                      if (!expires) return <span className="text-xs">—</span>;
+                      const isExpired = expires < new Date();
+                      return (
+                        <span className={`text-xs ${isExpired ? "text-red-400" : ""}`}>
+                          <LocalTime date={expires.toISOString()} dateOnly />
+                        </span>
+                      );
+                    })()}
+                  </td>
                   {isAdmin && (
                     <td className="px-5 py-4 text-muted-foreground">
                       {lic.operators?.name || lic.operators?.email || "-"}
@@ -349,7 +379,7 @@ export default function LicenseTable({
             })}
             {filteredLicenses.length === 0 && (
               <tr>
-                <td colSpan={canTransfer ? (isAdmin ? 9 : 8) : (isAdmin ? 8 : 7)} className="px-5 py-12 text-center text-muted-foreground">
+                <td colSpan={canTransfer ? (isAdmin ? 10 : 9) : (isAdmin ? 9 : 8)} className="px-5 py-12 text-center text-muted-foreground">
                   {licenses.length === 0 ? "No license keys yet" : "No licenses match the selected filter"}
                 </td>
               </tr>
