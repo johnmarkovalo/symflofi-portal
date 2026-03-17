@@ -47,10 +47,10 @@ const tierMeta = [
     name: "PlayTab Lite",
     prefix: "PTLI-",
     color: "emerald",
-    description: "Simplest setup — uses an external timer (AllAnTimer) to control power to the tablet. No ESP32 needed.",
+    description: "Simplest setup — uses an external coin-operated timer to control power to the tablet. No ESP32 needed.",
     hardware: [
       "Android tablet (any, with USB-C or Micro USB)",
-      "AllAnTimer or similar coin-operated power timer",
+      "Coin-operated power timer (any brand)",
       "USB charging cable",
     ],
     setup: [
@@ -58,10 +58,10 @@ const tierMeta = [
       { step: 2, title: "Connect to WiFi", description: "On the license entry screen, select your WiFi network and connect. Internet is required for license activation." },
       { step: 3, title: "Enter license key", description: "Enter your PTLI-XXXX-XXXX-XXXX license key. The app will validate it and set up Lite mode automatically." },
       { step: 4, title: "Complete setup wizard", description: "Set your admin PIN and choose which apps customers can use. Skip the hardware step (no ESP32 for Lite)." },
-      { step: 5, title: "Wire the timer", description: "Connect the AllAnTimer's USB output to the tablet's charging port. When a customer inserts coins, the timer supplies power and the tablet unlocks. When time runs out, power is cut and the tablet locks." },
+      { step: 5, title: "Wire the timer", description: "Connect the timer's USB output to the tablet's charging port. When a customer inserts coins, the timer supplies power and the tablet unlocks. When time runs out, power is cut and the tablet locks." },
       { step: 6, title: "Set as kiosk (optional)", description: "For full lockdown, connect via ADB and run: adb shell dpm set-device-owner com.symflo.playtab/.PlayTabDeviceAdminReceiver" },
     ],
-    notes: "Lite mode tracks sessions by charging state (power on = session start, power off = session end). Earnings are managed by the AllAnTimer — PlayTab only handles the lock screen and app whitelisting.",
+    notes: "Lite mode tracks sessions by charging state (power on = session start, power off = session end). Earnings are managed by the external timer — PlayTab only handles the lock screen and app whitelisting.",
   },
   {
     id: "pro",
