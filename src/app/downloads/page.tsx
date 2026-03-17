@@ -3,6 +3,7 @@ import DownloadLink from "./download-link";
 
 const UPDATES_BASE = "https://api.symflofi.cloud/updates";
 const MANIFEST_URL = `${UPDATES_BASE}/manifest.json`;
+const PLAYTAB_MANIFEST_URL = `${UPDATES_BASE}/playtab/manifest.json`;
 const STORAGE_BASE = UPDATES_BASE;
 
 interface FileInfo {
@@ -27,6 +28,25 @@ interface Manifest {
   releases: Record<string, ReleaseInfo>;
 }
 
+// PlayTab manifest types
+interface PlayTabFileInfo {
+  url: string;
+  sha256: string;
+  size: number;
+}
+
+interface PlayTabRelease {
+  date: string;
+  changelog: string;
+  apk: PlayTabFileInfo;
+  firmware?: PlayTabFileInfo;
+}
+
+interface PlayTabManifest {
+  latest: string;
+  releases: Record<string, PlayTabRelease>;
+}
+
 const BOARD_META: Record<string, { name: string; arch: string; soc: string; recommended?: boolean }> = {
   orangepione: { name: "Orange Pi One", arch: "ARMv7", soc: "Allwinner H3", recommended: true },
   orangepizero3: { name: "Orange Pi Zero 3", arch: "ARM64", soc: "Allwinner H618" },
@@ -43,6 +63,16 @@ function formatSize(bytes: number): string {
 async function getManifest(): Promise<Manifest | null> {
   try {
     const res = await fetch(MANIFEST_URL, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getPlayTabManifest(): Promise<PlayTabManifest | null> {
+  try {
+    const res = await fetch(PLAYTAB_MANIFEST_URL, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -78,6 +108,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DownloadsPage() {
   const manifest = await getManifest();
+  const ptManifest = await getPlayTabManifest();
+
+  const ptLatest = ptManifest?.latest || null;
+  const ptRelease = ptLatest ? ptManifest?.releases[ptLatest] : null;
 
   // Sort versions newest first
   const versions = manifest
@@ -301,26 +335,114 @@ export default async function DownloadsPage() {
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/5 pointer-events-none" />
           <div className="relative p-5 sm:p-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-foreground">PlayTab Android App</h2>
-                <p className="text-xs text-muted-foreground">Coin-operated tablet gaming kiosk</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground">PlayTab</h2>
+                    {ptLatest && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
+                        v{ptLatest}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Coin-operated tablet gaming kiosk</p>
+                </div>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              PlayTab turns any Android tablet into a coin-operated gaming kiosk. Install the APK, connect a coin acceptor, and start earning.
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+              PlayTab turns any Android tablet into a coin-operated gaming kiosk. Install the APK, connect a coin acceptor via ESP32, and start earning.
             </p>
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
-              <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              APK download coming soon
-            </div>
+
+            {ptRelease && ptLatest ? (
+              <div className="space-y-4">
+                {ptRelease.changelog && (
+                  <p className="text-xs text-muted-foreground mb-3">{ptRelease.changelog}</p>
+                )}
+
+                {/* APK Download */}
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                        <svg className="w-4.5 h-4.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground text-sm">Android APK</h3>
+                        <p className="text-xs text-muted-foreground">For any Android tablet (ARM/ARM64)</p>
+                      </div>
+                    </div>
+                    <DownloadLink
+                      href={`${STORAGE_BASE}/${ptRelease.apk.url}`}
+                      version={ptLatest}
+                      board="android"
+                      fileType="apk"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/25"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download APK ({formatSize(ptRelease.apk.size)})
+                    </DownloadLink>
+                  </div>
+                  <p className="mt-2 text-[10px] text-muted-foreground/60 font-mono whitespace-nowrap overflow-x-auto">
+                    SHA256: <span className="select-all">{ptRelease.apk.sha256}</span>
+                  </p>
+                </div>
+
+                {/* Firmware Download */}
+                {ptRelease.firmware && (
+                  <div className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                          <svg className="w-4.5 h-4.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground text-sm">ESP32 Firmware</h3>
+                          <p className="text-xs text-muted-foreground">Coin acceptor + timer controller</p>
+                        </div>
+                      </div>
+                      <DownloadLink
+                        href={`${STORAGE_BASE}/${ptRelease.firmware.url}`}
+                        version={ptLatest}
+                        board="esp32"
+                        fileType="firmware"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-foreground font-semibold text-xs hover:bg-muted transition-all"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Firmware ({formatSize(ptRelease.firmware.size)})
+                      </DownloadLink>
+                    </div>
+                    <p className="mt-2 text-[10px] text-muted-foreground/60 font-mono whitespace-nowrap overflow-x-auto">
+                      SHA256: <span className="select-all">{ptRelease.firmware.sha256}</span>
+                    </p>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground/60 mt-2">
+                  Released {ptRelease.date}
+                </p>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-muted/50 border border-border text-sm text-muted-foreground">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Downloads coming soon
+              </div>
+            )}
           </div>
         </div>
       </section>

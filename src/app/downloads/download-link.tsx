@@ -11,7 +11,7 @@ export default function DownloadLink({
   href: string;
   version: string;
   board: string;
-  fileType: "image" | "update";
+  fileType: "image" | "update" | "apk" | "firmware";
   className: string;
   children: React.ReactNode;
 }) {
