@@ -1,5 +1,6 @@
 import PublicNav from "@/components/public-nav";
 import DownloadLink from "../download-link";
+import { createClient } from "@/lib/supabase/server";
 
 const UPDATES_BASE = "https://api.symflofi.cloud/updates";
 const PLAYTAB_MANIFEST_URL = `${UPDATES_BASE}/playtab/manifest.json`;
@@ -39,12 +40,12 @@ async function getManifest(): Promise<PlayTabManifest | null> {
   }
 }
 
-const tiers = [
+const tierMeta = [
   {
     id: "lite",
+    tierName: "playtab_lite",
     name: "PlayTab Lite",
     prefix: "PTLI-",
-    price: "P299/year",
     color: "emerald",
     description: "Simplest setup — uses an external timer (AllAnTimer) to control power to the tablet. No ESP32 needed.",
     hardware: [
@@ -64,9 +65,9 @@ const tiers = [
   },
   {
     id: "pro",
+    tierName: "playtab_pro",
     name: "PlayTab Pro",
     prefix: "PTPR-",
-    price: "P499/year",
     color: "primary",
     description: "Full coin-operated setup with ESP32 handling the coin acceptor and countdown timer. The tablet connects to the ESP32 over WiFi.",
     hardware: [
@@ -90,9 +91,9 @@ const tiers = [
   },
   {
     id: "business",
+    tierName: "playtab_business",
     name: "PlayTab Business",
     prefix: "PTBS-",
-    price: "P999/year",
     color: "amber",
     description: "Enterprise setup with SymfloFi board integration. The tablet connects to a SymfloFi vendo machine via WebSocket for real-time control and cloud session sync.",
     hardware: [
@@ -112,6 +113,10 @@ const tiers = [
   },
 ];
 
+function formatPrice(priceCents: number): string {
+  return `P${(priceCents / 100).toLocaleString()}/year`;
+}
+
 const commonRequirements = [
   "A computer with ADB installed (for kiosk mode setup)",
   "A SymfloFi Cloud account with a PlayTab license key",
@@ -121,9 +126,25 @@ const commonRequirements = [
 export const dynamic = "force-dynamic";
 
 export default async function PlayTabDownloadsPage() {
-  const manifest = await getManifest();
+  const [manifest, supabase] = await Promise.all([getManifest(), createClient()]);
   const latest = manifest?.latest || null;
   const release = latest ? manifest?.releases[latest] : null;
+
+  const { data: tierPrices } = await supabase
+    .from("license_tiers")
+    .select("name, price_cents")
+    .eq("product", "playtab")
+    .in("name", tierMeta.map((t) => t.tierName));
+
+  const priceMap: Record<string, number> = {};
+  for (const tp of tierPrices ?? []) {
+    priceMap[tp.name] = tp.price_cents;
+  }
+
+  const tiers = tierMeta.map((t) => ({
+    ...t,
+    price: priceMap[t.tierName] !== undefined ? formatPrice(priceMap[t.tierName]) : "",
+  }));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
@@ -260,7 +281,9 @@ export default async function PlayTabDownloadsPage() {
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="text-lg font-bold text-foreground">{tier.name}</h3>
                   <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-mono text-muted-foreground">{tier.prefix}XXXX</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">{tier.price}</span>
+                  {tier.price && (
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">{tier.price}</span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{tier.description}</p>
               </div>
