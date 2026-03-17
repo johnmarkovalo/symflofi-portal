@@ -32,21 +32,93 @@ async function sendOtpEmail(
       from: FROM_EMAIL,
       to: [to],
       subject: "SymfloFi — License Transfer Verification Code",
-      html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-          <h2 style="margin: 0 0 8px; color: #111;">License Transfer Verification</h2>
-          <p style="color: #555; margin: 0 0 24px;">
-            You requested to transfer <strong>${licenseCount} license${licenseCount !== 1 ? "s" : ""}</strong>
-            to <strong>${recipientName}</strong>. Use the code below to confirm:
-          </p>
-          <div style="background: #f4f4f5; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
-            <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #111;">${otp}</span>
-          </div>
-          <p style="color: #888; font-size: 13px; margin: 0;">
-            This code expires in 10 minutes. If you did not request this transfer, you can safely ignore this email.
-          </p>
-        </div>
-      `,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Transfer Verification</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0f; min-height: 100vh;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom: 32px;">
+              <img src="https://symflofi.cloud/logo-icon.png" alt="SymfloFi" width="48" height="48" style="border-radius: 12px; display: block;" />
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 40px 32px;">
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 8px;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #f0f0f5; letter-spacing: -0.025em;">
+                      License Transfer Verification
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom: 32px;">
+                    <p style="margin: 0; font-size: 15px; color: #8b8b9e; line-height: 1.6;">
+                      You requested to transfer <strong style="color: #f0f0f5;">${licenseCount} license${licenseCount !== 1 ? "s" : ""}</strong>
+                      to <strong style="color: #f0f0f5;">${recipientName}</strong>. Use the code below to confirm:
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- OTP Code -->
+                <tr>
+                  <td align="center" style="padding-bottom: 32px;">
+                    <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; text-align: center;">
+                      <span style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #f0f0f5;">${otp}</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Divider -->
+                <tr>
+                  <td style="padding-bottom: 24px;">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.06);"></div>
+                  </td>
+                </tr>
+
+                <!-- Expiry note -->
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; font-size: 13px; color: #5c5c70; line-height: 1.6;">
+                      This code expires in 10 minutes. If you did not request this transfer, you can safely ignore this email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top: 32px;">
+              <p style="margin: 0; font-size: 12px; color: #3c3c4e; line-height: 1.5;">
+                This email was sent from
+                <a href="https://symflofi.cloud" style="color: #6366f1; text-decoration: none;">symflofi.cloud</a>.
+                <br />If you didn't initiate this transfer, no action is needed.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
     }),
   });
 

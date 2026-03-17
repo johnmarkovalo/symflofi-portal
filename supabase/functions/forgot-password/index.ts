@@ -52,27 +52,96 @@ async function sendResetEmail(
       from: FROM_EMAIL,
       to: [to],
       subject: `[${machineName}] Password Reset Request`,
-      html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
-          <h2 style="margin: 0 0 8px; color: #111;">Password Reset</h2>
-          <p style="color: #555; margin: 0 0 24px; line-height: 1.6;">
-            You requested a password reset for your <strong>${safeName}</strong> admin portal.
-            Click the button below to set a new password:
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetLink}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 12px;">
-              Reset Password
-            </a>
-          </div>
-          <p style="color: #888; font-size: 13px; margin: 0 0 24px;">
-            This link expires in ${TOKEN_EXPIRY_MINUTES} minutes. If you didn't request this, you can safely ignore this email.
-          </p>
-          <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 24px 0;" />
-          <p style="color: #a1a1aa; font-size: 12px; margin: 0;">
-            SymfloFi — Piso WiFi Management System
-          </p>
-        </div>
-      `,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0a0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0f; min-height: 100vh;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom: 32px;">
+              <img src="https://symflofi.cloud/logo-icon.png" alt="SymfloFi" width="48" height="48" style="border-radius: 12px; display: block;" />
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05)); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 40px 32px;">
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 8px;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #f0f0f5; letter-spacing: -0.025em;">
+                      Password Reset
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-bottom: 32px;">
+                    <p style="margin: 0; font-size: 15px; color: #8b8b9e; line-height: 1.6;">
+                      You requested a password reset for your <strong style="color: #f0f0f5;">${safeName}</strong> admin portal.
+                      Click the button below to set a new password:
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Button -->
+                <tr>
+                  <td align="center" style="padding-bottom: 32px;">
+                    <a href="${resetLink}" target="_blank" style="display: inline-block; padding: 14px 36px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 12px; letter-spacing: -0.01em;">
+                      Reset Password
+                    </a>
+                  </td>
+                </tr>
+
+                <!-- Divider -->
+                <tr>
+                  <td style="padding-bottom: 24px;">
+                    <div style="height: 1px; background: rgba(255, 255, 255, 0.06);"></div>
+                  </td>
+                </tr>
+
+                <!-- Expiry & fallback -->
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; font-size: 13px; color: #5c5c70; line-height: 1.6;">
+                      This link expires in ${TOKEN_EXPIRY_MINUTES} minutes. If you didn't request this, you can safely ignore this email.
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #6366f1; word-break: break-all; line-height: 1.5;">
+                      ${resetLink}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top: 32px;">
+              <p style="margin: 0; font-size: 12px; color: #3c3c4e; line-height: 1.5;">
+                This email was sent from
+                <a href="https://symflofi.cloud" style="color: #6366f1; text-decoration: none;">symflofi.cloud</a>.
+                <br />If you didn't request a password reset, no action is needed.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
     }),
   });
 
