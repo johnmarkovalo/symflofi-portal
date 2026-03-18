@@ -89,9 +89,11 @@ export async function assignLicenseOperator(licenseId: string, operatorId: strin
   return { success: true };
 }
 
+export type RevokeMode = "unbind" | "revoke" | "full_revoke";
+
 export async function revokeLicense(
   licenseId: string,
-  options: { unbindOnly: boolean }
+  options: { mode: RevokeMode }
 ) {
   const ctx = await getUserContext();
   if (!ctx || !ctx.role) {
@@ -101,8 +103,8 @@ export async function revokeLicense(
   const isAdmin = ctx.role === "admin";
   const isOperator = ctx.role === "operator";
 
-  // Operators can only unbind from machine, not full revoke
-  if (isOperator && !options.unbindOnly) {
+  // Operators can only unbind from machine
+  if (isOperator && options.mode !== "unbind") {
     return { error: "Operators can only unbind from machine" };
   }
 
@@ -110,23 +112,27 @@ export async function revokeLicense(
 
   const { data: license } = await supabase
     .from("license_keys")
-    .select("id, key, operator_id, machine_id, is_activated")
+    .select("id, key, operator_id, machine_id, is_activated, machine_uuid:machines(machine_uuid)")
     .eq("id", licenseId)
     .single();
 
   if (!license) return { error: "License not found" };
 
-  // Operators can only revoke their own licenses
-  if (isOperator && license.operator_id !== ctx.operatorId) {
-    return { error: "Unauthorized" };
-  }
-
   if (!license.is_activated && !license.machine_id) {
     return { error: "License is not bound to any machine" };
   }
 
-  // Decommission the machine row so it doesn't block re-activation
+  // Get the machine UUID before decommissioning (for unbind blocklist)
+  let unboundMachineUuid: string | null = null;
   if (license.machine_id) {
+    const { data: machine } = await supabase
+      .from("machines")
+      .select("machine_uuid")
+      .eq("id", license.machine_id)
+      .single();
+    unboundMachineUuid = machine?.machine_uuid ?? null;
+
+    // Decommission the machine row
     await supabase
       .from("machines")
       .update({
@@ -139,17 +145,36 @@ export async function revokeLicense(
       .eq("id", license.machine_id);
   }
 
-  // Unbind from machine (keep activated_at to preserve expiry clock)
+  // Build update fields based on mode
   const updateFields: Record<string, unknown> = {
     machine_id: null,
     is_activated: false,
   };
 
-  // Full revoke — permanently disable the license (admin only)
-  // Unbind only — detach from machine but allow reuse on another device
-  if (!options.unbindOnly) {
-    updateFields.operator_id = null;
-    updateFields.is_revoked = true;
+  let eventNote: string;
+
+  switch (options.mode) {
+    case "unbind":
+      // Unbind from machine, keep with operator, can reuse on DIFFERENT device
+      // Store the unbound machine UUID so validate_license can block re-binding
+      if (unboundMachineUuid) {
+        updateFields.unbound_from_uuid = unboundMachineUuid;
+      }
+      eventNote = "Hardware binding removed — license can be activated on a different device";
+      break;
+
+    case "revoke":
+      // Disable the key permanently, keep assigned to operator
+      updateFields.is_revoked = true;
+      eventNote = "License revoked — key disabled but remains assigned to operator";
+      break;
+
+    case "full_revoke":
+      // Disable the key AND remove from operator
+      updateFields.is_revoked = true;
+      updateFields.operator_id = null;
+      eventNote = "License fully revoked — key disabled and unassigned from operator";
+      break;
   }
 
   const { error: updateError } = await supabase
@@ -167,24 +192,29 @@ export async function revokeLicense(
     license_key: license.key,
     event: "revoked",
     from_operator_id: license.operator_id,
-    to_operator_id: options.unbindOnly ? license.operator_id : null,
+    to_operator_id: options.mode === "full_revoke" ? null : license.operator_id,
     actor_id: ctx.operatorId ?? null,
     actor_role: actorRole,
-    note: options.unbindOnly
-      ? `Hardware binding revoked by ${actorRole} (license kept with operator)`
-      : "License fully revoked by admin (unbound and unassigned)",
+    note: eventNote,
   });
+
+  const summaryLabel = options.mode === "unbind"
+    ? "unbind"
+    : options.mode === "revoke"
+      ? "revoke (keep operator)"
+      : "full revoke";
 
   await logAdminAction(ctx, {
     action: "license.revoke",
     entityType: "license",
     entityId: licenseId,
-    summary: `Revoked license ${license.key} (${options.unbindOnly ? "unbind only" : "full revoke"})`,
+    summary: `${summaryLabel}: ${license.key}`,
     details: {
       licenseKey: license.key,
-      unbindOnly: options.unbindOnly,
+      mode: options.mode,
       operatorId: license.operator_id,
       machineId: license.machine_id,
+      unboundMachineUuid,
     },
   });
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
-import { revokeLicense } from "./actions";
+import { revokeLicense, type RevokeMode } from "./actions";
 
 export default function RevokeLicenseButton({
   licenseId,
@@ -15,7 +15,7 @@ export default function RevokeLicenseButton({
   isAdmin: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [unbindOnly, setUnbindOnly] = useState(true);
+  const [mode, setMode] = useState<RevokeMode>("unbind");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -26,12 +26,17 @@ export default function RevokeLicenseButton({
     setError("");
 
     try {
-      const result = await revokeLicense(licenseId, { unbindOnly });
+      const result = await revokeLicense(licenseId, { mode });
       if (result.error) {
         toast(result.error, "error");
         setError(result.error);
       } else {
-        toast(unbindOnly ? "Machine unbound" : "License revoked");
+        const label = mode === "unbind"
+          ? "Machine unbound"
+          : mode === "revoke"
+            ? "License revoked"
+            : "License fully revoked";
+        toast(label);
         setOpen(false);
         router.refresh();
       }
@@ -41,6 +46,12 @@ export default function RevokeLicenseButton({
       setLoading(false);
     }
   }
+
+  const confirmLabel = mode === "unbind"
+    ? "Unbind Machine"
+    : mode === "revoke"
+      ? "Revoke License"
+      : "Fully Revoke";
 
   return (
     <>
@@ -56,39 +67,65 @@ export default function RevokeLicenseButton({
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
             <h3 className="text-lg font-semibold text-foreground mb-2">Revoke License</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              This will unbind the license from its machine, allowing it to be activated on a different device.
+              Choose how to handle this license.
             </p>
 
-            {isAdmin && hasOperator && (
-              <div className="space-y-2 mb-4">
-                <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-all cursor-pointer">
+            <div className="space-y-2 mb-4">
+              {/* Unbind — available to all */}
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 transition-all cursor-pointer">
+                <input
+                  type="radio"
+                  name="revokeMode"
+                  checked={mode === "unbind"}
+                  onChange={() => setMode("unbind")}
+                  className="accent-primary"
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Unbind from machine</p>
+                  <p className="text-xs text-muted-foreground">
+                    Detach from current device. Key can be activated on a different device.
+                  </p>
+                </div>
+              </label>
+
+              {/* Revoke (keep operator) — admin only */}
+              {isAdmin && hasOperator && (
+                <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-amber-500/30 transition-all cursor-pointer">
                   <input
                     type="radio"
                     name="revokeMode"
-                    checked={unbindOnly}
-                    onChange={() => setUnbindOnly(true)}
-                    className="accent-primary"
+                    checked={mode === "revoke"}
+                    onChange={() => setMode("revoke")}
+                    className="accent-amber-500"
                   />
                   <div>
-                    <p className="text-sm font-medium text-foreground">Unbind from machine only</p>
-                    <p className="text-xs text-muted-foreground">Keep the license assigned to the current operator</p>
+                    <p className="text-sm font-medium text-foreground">Revoke license</p>
+                    <p className="text-xs text-muted-foreground">
+                      Permanently disable the key. Stays assigned to operator for records.
+                    </p>
                   </div>
                 </label>
+              )}
+
+              {/* Full revoke — admin only */}
+              {isAdmin && hasOperator && (
                 <label className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-red-500/30 transition-all cursor-pointer">
                   <input
                     type="radio"
                     name="revokeMode"
-                    checked={!unbindOnly}
-                    onChange={() => setUnbindOnly(false)}
+                    checked={mode === "full_revoke"}
+                    onChange={() => setMode("full_revoke")}
                     className="accent-red-500"
                   />
                   <div>
                     <p className="text-sm font-medium text-foreground">Full revoke</p>
-                    <p className="text-xs text-muted-foreground">Unbind from machine and unassign from operator</p>
+                    <p className="text-xs text-muted-foreground">
+                      Permanently disable AND remove from operator entirely.
+                    </p>
                   </div>
                 </label>
-              </div>
-            )}
+              )}
+            </div>
 
             {error && (
               <p className="text-xs text-destructive mb-3">{error}</p>
@@ -107,7 +144,7 @@ export default function RevokeLicenseButton({
                 disabled={loading}
                 className="bg-red-500 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-red-600 disabled:opacity-50 transition-all shadow-lg shadow-red-500/25"
               >
-                {loading ? "Revoking..." : "Confirm Revoke"}
+                {loading ? "Processing..." : confirmLabel}
               </button>
             </div>
           </div>
