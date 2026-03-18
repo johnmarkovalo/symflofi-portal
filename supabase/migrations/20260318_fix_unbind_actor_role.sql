@@ -1,10 +1,5 @@
--- ============================================================================
--- Migration: unbind_license RPC — allows device to unbind its own license
--- Date: 2026-03-18
--- Description: Devices can unbind their own license key, clearing the machine
---              binding so the key can be activated on a different device.
---              Stores unbound_from_uuid to prevent re-binding on same device.
--- ============================================================================
+-- Fix: unbind_license used actor_role='device' which violates CHECK constraint.
+-- The allowed values are: 'admin', 'operator', 'system'. Use 'system' instead.
 
 CREATE OR REPLACE FUNCTION unbind_license(
   p_license_key TEXT,
@@ -14,7 +9,6 @@ DECLARE
   v_key RECORD;
   v_machine RECORD;
 BEGIN
-  -- 1. Look up the license key
   SELECT id, key, tier, operator_id, is_activated, machine_id, is_revoked
   INTO v_key
   FROM license_keys
@@ -32,13 +26,12 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'License is not bound to any machine');
   END IF;
 
-  -- 2. Verify the requesting device is the one bound to this key
   SELECT * INTO v_machine FROM machines WHERE id = v_key.machine_id;
   IF NOT FOUND OR v_machine.machine_uuid != p_machine_uuid THEN
     RETURN jsonb_build_object('success', false, 'error', 'This device is not bound to this license');
   END IF;
 
-  -- 3. Decommission the machine
+  -- Decommission the machine
   UPDATE machines
   SET license_key = NULL,
       license_tier = NULL,
@@ -47,14 +40,14 @@ BEGIN
       status = 'decommissioned'
   WHERE id = v_key.machine_id;
 
-  -- 4. Unbind the license key (keep with operator, block same device)
+  -- Unbind the license key
   UPDATE license_keys
   SET machine_id = NULL,
       is_activated = false,
       unbound_from_uuid = p_machine_uuid
   WHERE id = v_key.id;
 
-  -- 5. Audit log
+  -- Audit logs (actor_role must be admin/operator/system)
   INSERT INTO license_audit_log (
     license_key_id, license_key, event,
     from_operator_id, to_operator_id,
