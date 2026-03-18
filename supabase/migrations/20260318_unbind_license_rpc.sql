@@ -62,7 +62,7 @@ BEGIN
   ) VALUES (
     v_key.id, v_key.key, 'revoked',
     v_key.operator_id, v_key.operator_id,
-    v_key.operator_id, 'system',
+    v_key.operator_id, 'device',
     'License unbound from device ' || p_machine_uuid || ' (initiated from tablet)'
   );
 
