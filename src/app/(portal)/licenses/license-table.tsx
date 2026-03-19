@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -85,7 +85,12 @@ export default function LicenseTable({
   isAdmin: boolean;
   operatorId: string | null;
 }) {
+  const [refreshing, startTransition] = useTransition();
   const [productFilter, setProductFilter] = useState<"all" | "symflofi" | "playtab">("all");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "activated" | "unbound" | "revoked" | "expired">("all");
+  const [tierFilter, setTierFilter] = useState<"all" | string>("all");
+  const [operatorFilter, setOperatorFilter] = useState<"all" | string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showTransfer, setShowTransfer] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -230,9 +235,44 @@ export default function LicenseTable({
     }, 1500);
   }
 
-  const filteredLicenses = productFilter === "all"
-    ? licenses
-    : licenses.filter((l) => (l.product ?? "symflofi") === productFilter);
+  // Derive unique tiers and operators for filter dropdowns
+  const tiers = [...new Set(licenses.map((l) => l.tier))].sort();
+  const operators = isAdmin
+    ? [...new Map(licenses.filter((l) => l.operators).map((l) => [l.operator_id, l.operators!])).entries()]
+        .map(([id, op]) => ({ id: id!, name: op.name, email: op.email }))
+        .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email))
+    : [];
+
+  const searchLower = search.toLowerCase();
+
+  const filteredLicenses = licenses.filter((l) => {
+    // Product filter
+    if (productFilter !== "all" && (l.product ?? "symflofi") !== productFilter) return false;
+    // Status filter
+    if (statusFilter === "revoked" && !l.is_revoked) return false;
+    if (statusFilter === "activated" && (!l.is_activated || l.is_revoked)) return false;
+    if (statusFilter === "unbound" && (l.is_activated || l.is_revoked)) return false;
+    if (statusFilter === "expired") {
+      const expires = getExpiresAt(l);
+      if (!expires || expires >= new Date() || l.is_revoked) return false;
+    }
+    // Tier filter
+    if (tierFilter !== "all" && l.tier !== tierFilter) return false;
+    // Operator filter
+    if (operatorFilter !== "all" && l.operator_id !== operatorFilter) return false;
+    // Search
+    if (searchLower) {
+      const haystack = [
+        l.key,
+        l.operators?.name,
+        l.operators?.email,
+        l.machines?.name,
+        l.machines?.machine_uuid,
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(searchLower)) return false;
+    }
+    return true;
+  });
 
   const productTabs: { key: "all" | "symflofi" | "playtab"; label: string }[] = [
     { key: "all", label: `All (${licenses.length})` },
@@ -242,21 +282,98 @@ export default function LicenseTable({
 
   return (
     <>
-      {/* Product filter tabs */}
-      <div className="flex items-center gap-1 mb-4 bg-muted/50 rounded-xl p-1 w-fit">
-        {productTabs.map((tab) => (
+      {/* Filters */}
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search keys, operators, machines..."
+              className="w-full rounded-xl bg-muted/50 border border-border pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+            />
+          </div>
+
+          {/* Refresh */}
           <button
-            key={tab.key}
-            onClick={() => setProductFilter(tab.key)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              productFilter === tab.key
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            onClick={() => startTransition(() => router.refresh())}
+            disabled={refreshing}
+            className="rounded-xl bg-muted/50 border border-border p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-all disabled:opacity-50"
+            title="Refresh data"
           >
-            {tab.label}
+            <svg className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182M21.015 4.356v4.992" />
+            </svg>
           </button>
-        ))}
+
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+          >
+            <option value="all">All statuses</option>
+            <option value="activated">Activated</option>
+            <option value="unbound">Unbound</option>
+            <option value="revoked">Revoked</option>
+            <option value="expired">Expired</option>
+          </select>
+
+          {/* Tier filter */}
+          <select
+            value={tierFilter}
+            onChange={(e) => setTierFilter(e.target.value)}
+            className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+          >
+            <option value="all">All tiers</option>
+            {tiers.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
+          {/* Operator filter (admin only) */}
+          {isAdmin && operators.length > 0 && (
+            <select
+              value={operatorFilter}
+              onChange={(e) => setOperatorFilter(e.target.value)}
+              className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer max-w-[200px]"
+            >
+              <option value="all">All operators</option>
+              {operators.map((op) => (
+                <option key={op.id} value={op.id}>{op.name || op.email}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          {/* Product tabs */}
+          <div className="flex items-center gap-1 bg-muted/50 rounded-xl p-1 w-fit">
+            {productTabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setProductFilter(tab.key)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  productFilter === tab.key
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Result count */}
+          <span className="text-xs text-muted-foreground">
+            {filteredLicenses.length} of {licenses.length} licenses
+          </span>
+        </div>
       </div>
 
       {/* Selection toolbar */}
@@ -280,8 +397,13 @@ export default function LicenseTable({
         </div>
       )}
 
-      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-x-auto">
-        <table className="w-full text-sm min-w-[600px]">
+      <div className="relative bg-card/80 backdrop-blur-sm rounded-2xl border border-border overflow-x-auto">
+        {refreshing && (
+          <div className="absolute inset-x-0 top-0 z-10 h-1 overflow-hidden rounded-t-2xl">
+            <div className="h-full w-1/3 bg-primary animate-[loading_1s_ease-in-out_infinite]" />
+          </div>
+        )}
+        <table className={`w-full text-sm min-w-[600px] ${refreshing ? "opacity-50" : ""}`}>
           <thead>
             <tr className="border-b border-border">
               {canTransfer && (
