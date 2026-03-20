@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
+import SearchableSelect from "@/components/searchable-select";
 
 function TierBadge({ tier, label }: { tier: string; label?: string }) {
   const styles: Record<string, string> = {
@@ -78,15 +79,16 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
           </button>
 
           {/* Role filter */}
-          <select
+          <SearchableSelect
             value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
-            className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
-          >
-            <option value="all">All roles</option>
-            <option value="operator">Operators</option>
-            <option value="distributor">Distributors</option>
-          </select>
+            onChange={(v) => setRoleFilter(v as typeof roleFilter)}
+            placeholder="All roles"
+            options={[
+              { value: "all", label: "All roles" },
+              { value: "operator", label: "Operators" },
+              { value: "distributor", label: "Distributors" },
+            ]}
+          />
         </div>
 
         {/* Result count */}

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
 import { LocalTime } from "@/components/local-time";
+import SearchableSelect from "@/components/searchable-select";
 
 type License = {
   id: string;
@@ -312,42 +313,41 @@ export default function LicenseTable({
           </button>
 
           {/* Status filter */}
-          <select
+          <SearchableSelect
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
-          >
-            <option value="all">All statuses</option>
-            <option value="activated">Activated</option>
-            <option value="unbound">Unbound</option>
-            <option value="revoked">Revoked</option>
-            <option value="expired">Expired</option>
-          </select>
+            onChange={(v) => setStatusFilter(v as typeof statusFilter)}
+            placeholder="All statuses"
+            options={[
+              { value: "all", label: "All statuses" },
+              { value: "activated", label: "Activated" },
+              { value: "unbound", label: "Unbound" },
+              { value: "revoked", label: "Revoked" },
+              { value: "expired", label: "Expired" },
+            ]}
+          />
 
           {/* Tier filter */}
-          <select
+          <SearchableSelect
             value={tierFilter}
-            onChange={(e) => setTierFilter(e.target.value)}
-            className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
-          >
-            <option value="all">All tiers</option>
-            {tiers.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+            onChange={setTierFilter}
+            placeholder="All tiers"
+            options={[
+              { value: "all", label: "All tiers" },
+              ...tiers.map((t) => ({ value: t, label: t })),
+            ]}
+          />
 
           {/* Operator filter (admin only) */}
           {isAdmin && operators.length > 0 && (
-            <select
+            <SearchableSelect
               value={operatorFilter}
-              onChange={(e) => setOperatorFilter(e.target.value)}
-              className="rounded-xl bg-muted/50 border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer max-w-[200px]"
-            >
-              <option value="all">All operators</option>
-              {operators.map((op) => (
-                <option key={op.id} value={op.id}>{op.name || op.email}</option>
-              ))}
-            </select>
+              onChange={setOperatorFilter}
+              placeholder="All operators"
+              options={[
+                { value: "all", label: "All operators" },
+                ...operators.map((op) => ({ value: op.id, label: op.name || op.email })),
+              ]}
+            />
           )}
         </div>
 
