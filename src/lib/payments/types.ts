@@ -40,6 +40,6 @@ export type WebhookEvent = {
 export interface PaymentProvider {
   readonly name: string;
   createSession(req: CreateSessionRequest): Promise<CreateSessionResult>;
-  parseWebhook(headers: Headers, body: unknown): Promise<WebhookEvent>;
+  parseWebhook(headers: Headers, body: unknown, rawBody?: string): Promise<WebhookEvent>;
   getSessionStatus(providerSessionId: string): Promise<WebhookEvent>;
 }

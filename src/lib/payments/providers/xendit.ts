@@ -54,7 +54,7 @@ export class XenditProvider implements PaymentProvider {
     };
   }
 
-  async parseWebhook(headers: Headers, body: unknown): Promise<WebhookEvent> {
+  async parseWebhook(headers: Headers, body: unknown, _rawBody?: string): Promise<WebhookEvent> {
     const token = headers.get("x-callback-token");
     if (token !== XENDIT_WEBHOOK_TOKEN) {
       throw new Error("Invalid webhook token");

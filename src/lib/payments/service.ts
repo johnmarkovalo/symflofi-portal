@@ -104,9 +104,9 @@ export async function createPaymentSession(orderId: string, userEmail: string, u
   return { checkoutUrl: result.checkoutUrl };
 }
 
-export async function handlePaymentWebhook(headers: Headers, body: unknown) {
+export async function handlePaymentWebhook(headers: Headers, body: unknown, rawBody?: string) {
   const provider = getProvider();
-  const event = await provider.parseWebhook(headers, body);
+  const event = await provider.parseWebhook(headers, body, rawBody);
 
   await processPaymentEvent(event);
 }

@@ -7,8 +7,9 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
     const limited = await rateLimit(webhookLimiter, ip);
     if (limited) return limited;
-    const body = await req.json();
-    await handlePaymentWebhook(req.headers, body);
+    const rawBody = await req.text();
+    const body = JSON.parse(rawBody);
+    await handlePaymentWebhook(req.headers, body, rawBody);
     return NextResponse.json({ received: true });
   } catch (err) {
     console.error("Payment webhook error:", err);

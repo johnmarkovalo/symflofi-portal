@@ -1,5 +1,6 @@
 import type { PaymentProvider } from "../types";
 import { XenditProvider } from "./xendit";
+import { PayMongoProvider } from "./paymongo";
 
 const PROVIDER = process.env.PAYMENT_PROVIDER || "xendit";
 
@@ -12,9 +13,9 @@ export function getProvider(): PaymentProvider {
     case "xendit":
       cached = new XenditProvider();
       break;
-    // case "paymongo":
-    //   cached = new PayMongoProvider();
-    //   break;
+    case "paymongo":
+      cached = new PayMongoProvider();
+      break;
     default:
       throw new Error(`Unknown payment provider: ${PROVIDER}`);
   }

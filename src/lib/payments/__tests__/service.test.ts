@@ -143,7 +143,7 @@ describe("handlePaymentWebhook", () => {
     const headers = new Headers();
     await handlePaymentWebhook(headers, { test: true });
 
-    expect(mockProvider.parseWebhook).toHaveBeenCalledWith(headers, { test: true });
+    expect(mockProvider.parseWebhook).toHaveBeenCalledWith(headers, { test: true }, undefined);
     expect(mockSupabase.rpc).toHaveBeenCalledWith(
       "generate_license_keys_bulk",
       expect.objectContaining({
