@@ -67,6 +67,7 @@ type LicenseTier = {
   sales_history_days: number;
   is_highlighted: boolean;
   support_level: string;
+  features: Record<string, unknown>;
 };
 
 function formatTierPrice(cents: number) {
@@ -101,18 +102,24 @@ function buildFeatureList(tier: LicenseTier): string[] {
 }
 
 function buildPlayTabFeatureList(tier: LicenseTier): string[] {
-  const features: string[] = [];
-  features.push("Coin-operated timer system");
-  if (tier.cloud_dashboard) features.push("Cloud dashboard & monitoring");
-  if (tier.remote_access) features.push("Remote device management");
+  const list: string[] = [];
+  const f = tier.features ?? {};
+  list.push("Coin-operated timer system");
+  if (f.kiosk_mode) list.push("Kiosk mode & device lockdown");
+  if (f.app_whitelisting) list.push("App whitelisting");
+  if (f.deep_freeze) list.push("Deep freeze mode");
+  if (f.theming) list.push("Theme & branding customization");
+  if (tier.cloud_dashboard) list.push("Cloud dashboard & monitoring");
+  if (tier.remote_access) list.push("Remote device management");
+  if (f.ota_updates) list.push("In-app OTA updates");
   const hist = tier.sales_history_days;
-  features.push(
+  list.push(
     hist === -1
       ? "Unlimited session history"
       : `${hist} day${hist !== 1 ? "s" : ""} session history`,
   );
-  if (tier.support_level === "priority") features.push("Priority support");
-  return features;
+  if (tier.support_level === "priority") list.push("Priority support");
+  return list;
 }
 
 const stats = [
