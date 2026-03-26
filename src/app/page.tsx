@@ -2,6 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import PublicNav from "@/components/public-nav";
 import { createClient } from "@/lib/supabase/server";
+import {
+  SymfloFiPricing,
+  PlayTabPricing,
+  type PlanData,
+} from "@/components/pricing-section";
 
 const features = [
   {
@@ -72,7 +77,7 @@ type LicenseTier = {
 
 function formatTierPrice(cents: number) {
   if (cents === 0) return "Free";
-  return `₱${(cents / 100).toLocaleString()}`;
+  return `₱${(cents / 100).toLocaleString("en-PH")}`;
 }
 
 function buildFeatureList(tier: LicenseTier): string[] {
@@ -163,28 +168,36 @@ export default async function LandingPage() {
     playtabTiers = ptTiers;
   }
 
-  const plans = (tiers ?? []).map((tier: LicenseTier) => ({
-    name: tier.label,
-    price: formatTierPrice(tier.price_cents),
-    period:
-      tier.price_cents > 0 && tier.duration_days === 365
-        ? "/year"
-        : tier.price_cents > 0
-          ? `/${tier.duration_days}d`
-          : "",
-    features: buildFeatureList(tier),
-    cta: tier.price_cents === 0 ? "Get Started" : `Get ${tier.label} License`,
-    highlight: tier.is_highlighted,
-  }));
+  // Bulk discount: 20% off for 50+ licenses
+  const BULK_DISCOUNT = 0.2;
+  const BULK_QTY = 50;
 
-  const playtabPlans = (playtabTiers ?? []).map((tier: LicenseTier) => ({
-    name: tier.label,
-    price: formatTierPrice(tier.price_cents),
-    period: tier.duration_days === 365 ? "/year" : `/${tier.duration_days}d`,
-    features: buildPlayTabFeatureList(tier),
-    cta: `Get ${tier.label} License`,
-    highlight: tier.is_highlighted,
-  }));
+  function buildPlanData(tier: LicenseTier, product: "symflofi" | "playtab"): PlanData {
+    const isFree = tier.price_cents === 0;
+    const bulkUnitCents = isFree ? 0 : Math.round(tier.price_cents * (1 - BULK_DISCOUNT));
+    const savingsCents = tier.price_cents - bulkUnitCents;
+    return {
+      name: tier.label,
+      price: formatTierPrice(tier.price_cents),
+      period: isFree
+        ? ""
+        : tier.duration_days === 365
+          ? "/year"
+          : `/${tier.duration_days}d`,
+      bulkPrice: isFree ? "Free" : formatTierPrice(bulkUnitCents),
+      bulkSavings: isFree ? "" : formatTierPrice(savingsCents),
+      bulkQty: isFree ? 0 : BULK_QTY,
+      features:
+        product === "playtab"
+          ? buildPlayTabFeatureList(tier)
+          : buildFeatureList(tier),
+      cta: isFree ? "Get Started" : `Get ${tier.label} License`,
+      highlight: tier.is_highlighted,
+    };
+  }
+
+  const plans: PlanData[] = (tiers ?? []).map((t: LicenseTier) => buildPlanData(t, "symflofi"));
+  const playtabPlans: PlanData[] = (playtabTiers ?? []).map((t: LicenseTier) => buildPlanData(t, "playtab"));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
@@ -420,158 +433,10 @@ export default async function LandingPage() {
           </p>
         </div>
 
-        {/* SymfloFi Plans */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
-            <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">SymfloFi</h3>
-            <p className="text-sm text-muted-foreground">Piso WiFi vending system</p>
-          </div>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative flex flex-col p-6 sm:p-7 rounded-2xl border transition-all ${
-                plan.highlight
-                  ? "bg-primary/5 border-primary/30 shadow-xl shadow-primary/10 sm:scale-[1.02]"
-                  : "bg-card/60 backdrop-blur-sm border-border hover:border-primary/20"
-              }`}
-            >
-              {plan.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold">
-                  Most Popular
-                </div>
-              )}
-              <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-              <div className="mt-5 mb-6">
-                <span className="text-3xl font-bold text-foreground">
-                  {plan.price}
-                </span>
-                {plan.period && (
-                  <span className="text-sm text-muted-foreground">
-                    {plan.period}
-                  </span>
-                )}
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <svg
-                      className="w-4 h-4 text-emerald-400 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/signup"
-                className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${
-                  plan.highlight
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/25"
-                    : "border border-border text-foreground hover:bg-muted"
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
+        <SymfloFiPricing plans={plans} />
 
-        {/* PlayTab Plans */}
         {playtabPlans.length > 0 && (
-          <>
-            <div className="flex items-center gap-3 mt-16 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5h3m-6.75 2.25h10.5a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 4.5v15a2.25 2.25 0 002.25 2.25z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">PlayTab</h3>
-                <p className="text-sm text-muted-foreground">Coin-operated tablet gaming kiosk</p>
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
-              {playtabPlans.map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`relative flex flex-col p-6 sm:p-7 rounded-2xl border transition-all ${
-                    plan.highlight
-                      ? "bg-emerald-500/5 border-emerald-500/30 shadow-xl shadow-emerald-500/10 sm:scale-[1.02]"
-                      : "bg-card/60 backdrop-blur-sm border-border hover:border-emerald-500/20"
-                  }`}
-                >
-                  {plan.highlight && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-semibold">
-                      Most Popular
-                    </div>
-                  )}
-                  <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
-                  <div className="mt-5 mb-6">
-                    <span className="text-3xl font-bold text-foreground">
-                      {plan.price}
-                    </span>
-                    {plan.period && (
-                      <span className="text-sm text-muted-foreground">
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((f) => (
-                      <li
-                        key={f}
-                        className="flex items-center gap-2 text-sm text-muted-foreground"
-                      >
-                        <svg
-                          className="w-4 h-4 text-emerald-400 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/signup"
-                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${
-                      plan.highlight
-                        ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25"
-                        : "border border-border text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </>
+          <PlayTabPricing plans={playtabPlans} />
         )}
       </section>
 
