@@ -119,6 +119,7 @@ function buildPlayTabFeatureList(tier: LicenseTier): string[] {
       : `${hist} day${hist !== 1 ? "s" : ""} session history`,
   );
   if (tier.support_level === "priority") list.push("Priority support");
+  if (tier.name === "playtab_business") list.push("Requires SymfloFi Business plan");
   return list;
 }
 
