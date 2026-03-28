@@ -7,6 +7,7 @@ import { LocalTime } from "@/components/local-time";
 import SSHToggle from "./ssh-toggle";
 import DeleteMachineButton from "./delete-machine-button";
 import MachineDetailsEdit from "./machine-details-edit";
+import PlayTabControls from "./playtab-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -312,6 +313,13 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
       </div>
+
+      {/* PlayTab Remote Controls */}
+      {isPlayTab && (
+        <div className="mb-6">
+          <PlayTabControls machineId={id} isOnline={!!isOnline} />
+        </div>
+      )}
 
       {/* Machine Details Edit */}
       <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 mb-6">

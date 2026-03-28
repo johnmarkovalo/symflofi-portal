@@ -159,6 +159,74 @@ export async function deleteMachine(machineId: string) {
   return { success: true };
 }
 
+// ---------------------------------------------------------------------------
+// PlayTab Remote Commands
+// ---------------------------------------------------------------------------
+
+export async function sendPlayTabCommand(
+  machineId: string,
+  command: string,
+  payload: Record<string, unknown> = {},
+) {
+  const ctx = await getUserContext();
+  if (!ctx || !ctx.role) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+
+  // Operators can only control their own machines
+  if (ctx.role === "operator") {
+    const { data: machine } = await supabase
+      .from("machines")
+      .select("operator_id")
+      .eq("id", machineId)
+      .single();
+    if (!machine || machine.operator_id !== ctx.operatorId) {
+      return { error: "Unauthorized" };
+    }
+  }
+
+  // Insert command row — tablet picks this up via Realtime
+  const { data: cmd, error } = await supabase
+    .from("playtab_remote_commands")
+    .insert({
+      machine_id: machineId,
+      command,
+      payload,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+
+  // Poll for result (tablet should ack + complete within a few seconds)
+  const commandId = cmd.id;
+  const deadline = Date.now() + 10_000; // 10s timeout
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 500));
+
+    const { data: row } = await supabase
+      .from("playtab_remote_commands")
+      .select("status, result")
+      .eq("id", commandId)
+      .single();
+
+    if (!row) return { error: "Command disappeared" };
+
+    if (row.status === "completed") {
+      return { success: true, result: row.result };
+    }
+    if (row.status === "failed") {
+      return { error: row.result?.error ?? "Command failed on device" };
+    }
+    if (row.status === "expired") {
+      return { error: "Command expired — device may be offline" };
+    }
+  }
+
+  return { error: "Timeout — device did not respond within 10 seconds" };
+}
+
 export async function getSSHStatus(machineId: string) {
   const ctx = await getUserContext();
   if (!ctx || ctx.role !== "admin") {
