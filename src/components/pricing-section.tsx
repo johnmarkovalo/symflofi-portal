@@ -202,7 +202,7 @@ export function SymfloFiPricing({ plans }: { plans: PlanData[] }) {
         </div>
       </div>
       {hasBulk && <PricingToggle isBulk={isBulk} onChange={setIsBulk} />}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 max-w-6xl mx-auto">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-5xl mx-auto">
         {plans.map((plan) => (
           <PlanCard key={plan.name} plan={plan} isBulk={isBulk} />
         ))}

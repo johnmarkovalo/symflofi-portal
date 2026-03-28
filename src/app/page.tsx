@@ -11,27 +11,33 @@ import {
 
 const features = [
   {
-    title: "Cloud Management & Monitoring",
+    title: "Captive Portal & Branding",
     description:
-      "Issue licenses, track device status, app versions, and hardware info in real-time from anywhere.",
-    icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z",
+      "Customizable login page with your logo and branding. Customers connect, pay, and get online instantly.",
+    icon: "M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418",
   },
   {
-    title: "Operator Portal",
+    title: "Coin & Voucher Payments",
     description:
-      "Operators get their own dashboard to view licenses, machines, and customize captive portal branding.",
-    icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
+      "Accept coins via coin slot and sell printed vouchers. Flexible payment options for every walk-in customer.",
+    icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
   },
   {
     title: "Bandwidth & Session Control",
     description:
-      "SQM-based traffic shaping, per-user bandwidth limits, and time-based session billing.",
+      "SQM-based traffic shaping, per-user bandwidth limits, and time-based session billing with auto-disconnect.",
     icon: "M13 10V3L4 14h7v7l9-11h-7z",
   },
   {
-    title: "RADIUS & PPPoE",
+    title: "PPPoE Subscriber Plans",
     description:
-      "Enterprise-grade authentication with RADIUS server. Sell monthly internet plans with per-subscriber speed limits and automatic expiry.",
+      "Sell monthly internet plans with username/password authentication. Per-subscriber speed limits and automatic expiry.",
+    icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
+  },
+  {
+    title: "RADIUS Authentication",
+    description:
+      "Enterprise-grade RADIUS server for centralized subscriber management, accounting, and access control.",
     icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
   },
   {
@@ -41,28 +47,40 @@ const features = [
     icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
   },
   {
-    title: "Coin & Voucher Payments",
-    description:
-      "Accept coins and vouchers. Flexible payment options for every walk-in customer.",
-    icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-  },
-  {
     title: "Spin Wheel & Promos",
     description:
       "Engage customers with spin-the-wheel promotions, promo rates, and scheduled discounts to drive repeat visits.",
     icon: "M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99",
   },
   {
-    title: "E-Loading & SNMP",
+    title: "E-Loading Integration",
     description:
-      "Offer e-loading services directly from your machine. Monitor network health with SNMP for proactive maintenance.",
+      "Offer prepaid e-loading services directly from your Piso WiFi machine. Additional revenue stream with zero extra hardware.",
     icon: "M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3",
+  },
+  {
+    title: "SNMP Monitoring",
+    description:
+      "Monitor network devices, track bandwidth usage, and detect issues proactively with SNMP polling and alerts.",
+    icon: "M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5",
+  },
+  {
+    title: "Cloud Dashboard",
+    description:
+      "Issue licenses, track device status, app versions, and hardware info in real-time from anywhere.",
+    icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z",
+  },
+  {
+    title: "Sales Reports & Analytics",
+    description:
+      "Track revenue, monitor sales trends by tier, and view per-machine earnings with detailed reporting dashboards.",
+    icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z",
   },
   {
     title: "Remote Access & OTA",
     description:
       "Manage your machines remotely via secure VPN tunnel. Push firmware updates over-the-air with one click.",
-    icon: "M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418",
+    icon: "M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25",
   },
 ];
 
@@ -239,7 +257,7 @@ export default async function LandingPage() {
     };
   }
 
-  const plans: PlanData[] = (tiers ?? []).map((t: LicenseTier) => buildPlanData(t, "symflofi"));
+  const plans: PlanData[] = (tiers ?? []).filter((t: LicenseTier) => t.price_cents > 0).map((t: LicenseTier) => buildPlanData(t, "symflofi"));
   const playtabPlans: PlanData[] = (playtabTiers ?? []).map((t: LicenseTier) => buildPlanData(t, "playtab"));
   const wispPlans: PlanData[] = (wispTiers ?? []).map((t: LicenseTier) => buildPlanData(t, "symflowisp"));
 
@@ -283,7 +301,7 @@ export default async function LandingPage() {
             Platform
           </h1>
           <p className="mt-4 text-lg sm:text-xl text-muted-foreground/80 max-w-2xl mx-auto animate-fade-in-up delay-150">
-            Piso WiFi &middot; PlayTab Gaming &middot; Cloud-Managed
+            Piso WiFi &middot; WISP &middot; PlayTab Gaming &middot; Cloud-Managed
           </p>
           <p className="mt-3 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in-up delay-200">
             From Piso WiFi machines to coin-operated gaming tablets &mdash;
@@ -330,10 +348,10 @@ export default async function LandingPage() {
             SymfloFi Products
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
-            Two products, one cloud platform. Choose what fits your business.
+            Three products, one cloud platform. Choose what fits your business.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
           <a
             href="#features"
             className="group p-6 sm:p-8 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5"
@@ -346,6 +364,20 @@ export default async function LandingPage() {
             <h3 className="text-lg font-bold text-foreground mb-2">SymfloFi</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Piso WiFi vending system with coin slot support, captive portal, bandwidth management, voucher system, and cloud monitoring.
+            </p>
+          </a>
+          <a
+            href="#features"
+            className="group p-6 sm:p-8 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-cyan-500/30 transition-all hover:shadow-lg hover:shadow-cyan-500/5"
+          >
+            <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-4 group-hover:bg-cyan-500/15 transition-colors">
+              <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">SymfloFi WISP</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Full ISP management with RADIUS authentication, PPPoE subscriber plans, MWAN3 load balancing, and SNMP network monitoring.
             </p>
           </a>
           <div className="group p-6 sm:p-8 rounded-2xl bg-card/60 backdrop-blur-sm border border-border hover:border-emerald-500/30 transition-all hover:shadow-lg hover:shadow-emerald-500/5">
@@ -372,8 +404,8 @@ export default async function LandingPage() {
             Advanced Features
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto text-sm sm:text-base">
-            Everything you need to run a WiFi vending business, from coin slots
-            to cloud dashboards.
+            Everything you need to run a Piso WiFi or WISP business, from coin slots
+            to RADIUS and cloud dashboards.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
