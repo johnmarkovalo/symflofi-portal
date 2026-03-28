@@ -62,6 +62,18 @@ export default async function OperatorDetailPage({
     .eq("operator_id", id)
     .order("created_at", { ascending: false });
 
+  const { data: creditOrders } = await supabase
+    .from("license_orders")
+    .select("id, total_price_cents, amount_paid_cents, status, created_at, notes")
+    .eq("operator_id", id)
+    .in("status", ["credit", "partially_paid"])
+    .order("created_at", { ascending: false });
+
+  const outstandingTotal = (creditOrders ?? []).reduce(
+    (sum, o) => sum + (o.total_price_cents - (o.amount_paid_cents ?? 0)),
+    0,
+  );
+
   return (
     <div>
       <div className="flex items-center gap-4 mb-8">
@@ -92,6 +104,40 @@ export default async function OperatorDetailPage({
           distributorTier={operator.distributor_tier}
         />
       </div>
+
+      {/* Outstanding credits */}
+      {creditOrders && creditOrders.length > 0 && (
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-orange-500/20 p-6 mb-6">
+          <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Outstanding Credits
+            <span className="ml-auto text-lg font-bold text-orange-400">
+              {"\u20B1"}{(outstandingTotal / 100).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+            </span>
+          </h2>
+          <div className="space-y-2">
+            {creditOrders.map((o) => {
+              const remaining = o.total_price_cents - (o.amount_paid_cents ?? 0);
+              return (
+                <Link key={o.id} href="/orders" className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded-lg transition-colors">
+                  <div>
+                    <span className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</span>
+                    {o.notes && <span className="text-xs text-muted-foreground ml-2">— {o.notes}</span>}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-medium text-foreground">
+                      {"\u20B1"}{(remaining / 100).toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-1">remaining</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6">

@@ -24,11 +24,11 @@ export default async function LicensesPage() {
   const { data: licenses } = await query;
 
   // Only admins can generate keys
-  let operators: { id: string; name: string | null; email: string }[] = [];
+  let operators: { id: string; name: string | null; email: string; distributor_discount_pct?: number }[] = [];
   if (isAdmin) {
     const { data } = await supabase
       .from("operators")
-      .select("id, name, email")
+      .select("id, name, email, distributor_discount_pct")
       .order("name");
     operators = data ?? [];
   }

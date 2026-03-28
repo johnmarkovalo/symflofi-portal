@@ -41,8 +41,17 @@ export default async function LicenseRequestsPage() {
 
   let query = supabase
     .from("license_requests")
-    .select("*, operators(name, email), license_keys(id, key, is_activated, machine_id)")
+    .select("*, operators(name, email, distributor_discount_pct), license_keys(id, key, is_activated, machine_id)")
     .order("created_at", { ascending: false });
+
+  // Fetch tier prices for admin sale tracking
+  const { data: tierPrices } = isAdmin
+    ? await supabase.from("license_tiers").select("name, product, price_cents, label")
+    : { data: null };
+  const tierPriceMap: Record<string, { price_cents: number; label: string; product: string }> = {};
+  for (const t of tierPrices ?? []) {
+    tierPriceMap[t.name] = { price_cents: t.price_cents, label: t.label, product: t.product };
+  }
 
   if (!isAdmin && ctx.operatorId) {
     query = query.eq("operator_id", ctx.operatorId);
@@ -119,7 +128,17 @@ export default async function LicenseRequestsPage() {
                 {isAdmin && (
                   <td className="px-5 py-4">
                     {req.status === "pending" && (
-                      <RequestActions requestId={req.id} operatorId={req.operator_id} tier={req.tier} quantity={req.quantity} durationMonths={req.duration_months} />
+                      <RequestActions
+                        requestId={req.id}
+                        operatorId={req.operator_id}
+                        tier={req.tier}
+                        quantity={req.quantity}
+                        durationMonths={req.duration_months}
+                        tierPriceCents={tierPriceMap[req.tier]?.price_cents ?? 0}
+                        tierLabel={tierPriceMap[req.tier]?.label ?? req.tier}
+                        tierProduct={tierPriceMap[req.tier]?.product ?? "symflofi"}
+                        operatorDiscountPct={req.operators?.distributor_discount_pct ?? 0}
+                      />
                     )}
                     {req.status === "denied" && req.denial_reason && (
                       <span className="text-xs text-muted-foreground" title={req.denial_reason}>Reason: {req.denial_reason}</span>

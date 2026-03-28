@@ -76,6 +76,7 @@ export default async function DashboardPage() {
       playtabSessions,
       playtabRevenue,
       machinesWithProduct,
+      creditOrdersResult,
     ] = await Promise.all([
       supabase.from("operators").select("*", { count: "exact", head: true }),
       supabase.from("license_keys").select("*", { count: "exact", head: true }),
@@ -93,6 +94,7 @@ export default async function DashboardPage() {
       supabase.from("playtab_sessions").select("*", { count: "exact", head: true }),
       supabase.from("playtab_daily_revenue").select("revenue_cents"),
       supabase.from("machines").select("product, hardware, license_tier").not("hardware", "is", null),
+      supabase.from("license_orders").select("total_price_cents, amount_paid_cents").in("status", ["credit", "partially_paid"]),
     ]);
 
     // --- Revenue analytics ---
@@ -220,6 +222,14 @@ export default async function DashboardPage() {
     const totalPlaytabEarnings = ((playtabRevenue.data ?? []) as { revenue_cents: number }[])
       .reduce((sum, r) => sum + r.revenue_cents, 0);
 
+    // --- Outstanding credits ---
+    const creditOrderRows = (creditOrdersResult.data ?? []) as { total_price_cents: number; amount_paid_cents: number }[];
+    const outstandingCredits = creditOrderRows.reduce(
+      (sum, o) => sum + (o.total_price_cents - (o.amount_paid_cents ?? 0)),
+      0,
+    );
+    const creditOrderCount = creditOrderRows.length;
+
     // --- Product breakdown for Active Boards ---
     const machinesProductData = (machinesWithProduct.data ?? []) as MachineRow[];
     const symflofiDeviceCount = machinesProductData.filter((m) => (m.product ?? "symflofi") === "symflofi").length;
@@ -229,6 +239,7 @@ export default async function DashboardPage() {
     const stats = [
       { label: "Total Revenue", value: formatCurrency(totalRevenue), subtitle: `${totalOrders} orders`, icon: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
       { label: "This Month", value: formatCurrency(monthRevenue), subtitle: `${monthOrders} orders`, icon: "M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941", color: "text-cyan-400", bg: "bg-cyan-500/10", border: "border-cyan-500/20" },
+      ...(creditOrderCount > 0 ? [{ label: "Outstanding Credits", value: formatCurrency(outstandingCredits), subtitle: `${creditOrderCount} unpaid`, icon: "M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" }] : []),
       { label: "Operators", value: operators.count ?? 0, subtitle: `${distributorCount} distributors`, icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
       { label: "License Keys", value: licenses.count ?? 0, subtitle: `${activated.count ?? 0} activated`, icon: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20" },
       { label: "Machines", value: machines.count ?? 0, icon: "M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import OrderKeys from "./order-keys";
+import RecordPayment from "./record-payment";
 
 type OrderItem = {
   tier_label: string;
@@ -13,11 +14,15 @@ type OrderRow = {
   id: string;
   status: string;
   total_price_cents: number;
+  amount_paid_cents: number;
   payment_method: string | null;
   payment_channel_type: string | null;
   paid_at: string | null;
   created_at: string;
   keys_generated: boolean;
+  source: string;
+  discount_pct: number;
+  notes: string | null;
   license_order_items: OrderItem[];
   operators?: { name: string; email: string } | null;
 };
@@ -42,15 +47,31 @@ function statusBadge(status: string) {
     pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     failed: "bg-red-500/10 text-red-400 border-red-500/20",
     cancelled: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+    credit: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    partially_paid: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  };
+  const labels: Record<string, string> = {
+    partially_paid: "Partial",
   };
   const style = styles[status] ?? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border capitalize ${style}`}
     >
-      {status}
+      {labels[status] ?? status}
     </span>
   );
+}
+
+function sourceBadge(source: string) {
+  if (source === "admin") {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20">
+        Admin
+      </span>
+    );
+  }
+  return null;
 }
 
 function lineItemsSummary(items: OrderItem[]) {
@@ -74,7 +95,7 @@ export default async function OrdersPage() {
   let query = supabase
     .from("license_orders")
     .select(
-      `id, status, total_price_cents, payment_method, payment_channel_type, paid_at, created_at, keys_generated,
+      `id, status, total_price_cents, amount_paid_cents, payment_method, payment_channel_type, paid_at, created_at, keys_generated, source, discount_pct, notes,
        license_order_items (tier_label, quantity, bonus_quantity)${isAdmin ? ", operators (name, email)" : ""}`,
     )
     .order("created_at", { ascending: false });
@@ -141,15 +162,28 @@ export default async function OrdersPage() {
                     #{order.id.slice(0, 8)}
                   </span>
                   {statusBadge(order.status)}
+                  {sourceBadge(order.source)}
                   {order.keys_generated && (
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
                       Keys Generated
                     </span>
                   )}
+                  {order.discount_pct > 0 && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {order.discount_pct}% off
+                    </span>
+                  )}
                 </div>
-                <span className="text-lg font-bold text-foreground">
-                  {formatCurrency(order.total_price_cents)}
-                </span>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-foreground">
+                    {formatCurrency(order.total_price_cents)}
+                  </span>
+                  {(order.status === "credit" || order.status === "partially_paid") && (
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(order.amount_paid_cents ?? 0)} paid / {formatCurrency(order.total_price_cents - (order.amount_paid_cents ?? 0))} remaining
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* Order details */}
@@ -191,6 +225,26 @@ export default async function OrdersPage() {
                     {order.operators.name}{" "}
                     <span className="text-muted-foreground">({order.operators.email})</span>
                   </p>
+                </div>
+              )}
+
+              {/* Notes */}
+              {order.notes && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <p className="text-[11px] text-muted-foreground/60 uppercase tracking-wide mb-0.5">
+                    Notes
+                  </p>
+                  <p className="text-sm text-muted-foreground">{order.notes}</p>
+                </div>
+              )}
+
+              {/* Credit payment recording */}
+              {isAdmin && (order.status === "credit" || order.status === "partially_paid") && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <RecordPayment
+                    orderId={order.id}
+                    remainingCents={order.total_price_cents - (order.amount_paid_cents ?? 0)}
+                  />
                 </div>
               )}
 
