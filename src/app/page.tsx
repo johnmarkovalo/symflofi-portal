@@ -28,16 +28,34 @@ const features = [
     icon: "M13 10V3L4 14h7v7l9-11h-7z",
   },
   {
-    title: "PPPoE Subscriber Plans",
+    title: "RADIUS & PPPoE",
     description:
-      "Sell monthly internet plans with username/password authentication. Per-subscriber speed limits and automatic expiry.",
-    icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z",
+      "Enterprise-grade authentication with RADIUS server. Sell monthly internet plans with per-subscriber speed limits and automatic expiry.",
+    icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
+  },
+  {
+    title: "MWAN3 Load Balancing",
+    description:
+      "Multi-WAN failover and load balancing. Keep your machines online with automatic ISP switching.",
+    icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
   },
   {
     title: "Coin & Voucher Payments",
     description:
       "Accept coins and vouchers. Flexible payment options for every walk-in customer.",
     icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
+  {
+    title: "Spin Wheel & Promos",
+    description:
+      "Engage customers with spin-the-wheel promotions, promo rates, and scheduled discounts to drive repeat visits.",
+    icon: "M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99",
+  },
+  {
+    title: "E-Loading & SNMP",
+    description:
+      "Offer e-loading services directly from your machine. Monitor network health with SNMP for proactive maintenance.",
+    icon: "M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3",
   },
   {
     title: "Remote Access & OTA",
@@ -73,6 +91,13 @@ type LicenseTier = {
   is_highlighted: boolean;
   support_level: string;
   features: Record<string, unknown>;
+  radius_enabled: boolean;
+  snmp_enabled: boolean;
+  spinwheel_enabled: boolean;
+  mwan_enabled: boolean;
+  promo_rates_enabled: boolean;
+  sub_accounts_enabled: boolean;
+  eloading_enabled: boolean;
 };
 
 function formatTierPrice(cents: number) {
@@ -89,8 +114,16 @@ function buildFeatureList(tier: LicenseTier): string[] {
       : `${users} concurrent users`,
   );
   if (tier.pppoe_enabled) features.push("PPPoE subscriber plans");
+  if (tier.radius_enabled) features.push("RADIUS authentication");
+  if (tier.snmp_enabled) features.push("SNMP monitoring");
+  if (tier.mwan_enabled) features.push("MWAN3 load balancing");
+  if (tier.spinwheel_enabled) features.push("Spin wheel promotions");
+  if (tier.promo_rates_enabled) features.push("Promo rates & scheduling");
+  if (tier.eloading_enabled) features.push("E-loading integration");
+  if (tier.sub_accounts_enabled) features.push("Sub-accounts");
   if (tier.cloud_dashboard) features.push("Cloud dashboard & monitoring");
-  if (tier.max_sub_vendos !== 0)
+  if (tier.remote_access) features.push("Remote access & OTA updates");
+  if (tier.max_sub_vendos !== 0 && !tier.sub_accounts_enabled)
     features.push(
       tier.max_sub_vendos === -1
         ? "Sub-vendor accounts"
