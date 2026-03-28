@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -280,7 +280,12 @@ export default function LicenseTable({
   });
 
   // Reset to page 1 when filters change
-  useEffect(() => { setCurrentPage(1); }, [productFilter, search, statusFilter, tierFilter, operatorFilter]);
+  const filterKey = `${productFilter}|${search}|${statusFilter}|${tierFilter}|${operatorFilter}`;
+  const prevFilterKey = useRef(filterKey);
+  if (prevFilterKey.current !== filterKey) {
+    prevFilterKey.current = filterKey;
+    if (currentPage !== 1) setCurrentPage(1);
+  }
 
   const totalFiltered = filteredLicenses.length;
   const totalPages = Math.ceil(totalFiltered / perPage);
