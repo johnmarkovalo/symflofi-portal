@@ -428,9 +428,17 @@ export default function StorePlans({
                 <h3 className="text-base font-semibold text-foreground">
                   {productLabels[product] ?? product}
                 </h3>
+                {product === "symflowisp" && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Coming Soon</span>
+                )}
                 <div className="flex-1 h-px bg-border" />
               </div>
             )}
+            {product === "symflowisp" ? (
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-6 text-center">
+                <p className="text-muted-foreground text-sm">Pricing will be announced soon. Contact sales@symflofi.cloud for early access.</p>
+              </div>
+            ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {plans.filter((p) => p.product === product).map((plan) => {
           const qty = getQuantity(plan.name);
@@ -519,6 +527,7 @@ export default function StorePlans({
           );
               })}
             </div>
+            )}
           </div>
         ));
       })()}

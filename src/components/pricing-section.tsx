@@ -211,10 +211,7 @@ export function SymfloFiPricing({ plans }: { plans: PlanData[] }) {
   );
 }
 
-export function SymfloWISPPricing({ plans }: { plans: PlanData[] }) {
-  const [isBulk, setIsBulk] = useState(false);
-  const hasBulk = plans.some((p) => p.bulkPrice && p.bulkPrice !== p.price);
-
+export function SymfloWISPPricing({ plans: _plans }: { plans: PlanData[] }) {
   return (
     <>
       <div className="flex items-center justify-between mt-16 mb-8">
@@ -242,16 +239,27 @@ export function SymfloWISPPricing({ plans }: { plans: PlanData[] }) {
           </div>
         </div>
       </div>
-      {hasBulk && <PricingToggle isBulk={isBulk} onChange={setIsBulk} />}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 max-w-4xl mx-auto">
-        {plans.map((plan) => (
-          <PlanCard
-            key={plan.name}
-            plan={plan}
-            isBulk={isBulk}
-            accentColor="emerald"
-          />
-        ))}
+      <div className="max-w-4xl mx-auto">
+        <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h4 className="text-xl font-bold text-foreground mb-2">Coming Soon</h4>
+          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+            SymfloWISP turns a single mini PC into a complete WISP platform — PPPoE subscribers, RADIUS authentication, SNMP monitoring, VLAN segmentation, and more.
+          </p>
+          <p className="text-sm text-cyan-400 font-medium">
+            Pricing will be announced soon. Interested? Contact us for early access.
+          </p>
+          <Link
+            href="mailto:sales@symflofi.cloud"
+            className="inline-block mt-4 px-6 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-medium hover:bg-cyan-500/20 transition-colors"
+          >
+            Contact for Early Access
+          </Link>
+        </div>
       </div>
     </>
   );
