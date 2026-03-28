@@ -124,7 +124,7 @@ export default function StorePlans({
         plan: {
           name: licenseTier.name,
           label: licenseTier.label,
-          product: licenseTier.name.startsWith("playtab_") ? "playtab" : "symflofi",
+          product: licenseTier.name.startsWith("playtab_") ? "playtab" : licenseTier.product ?? "symflofi",
           price: `₱${(licenseTier.priceCents / 100).toLocaleString()}`,
           priceCents: licenseTier.priceCents,
           period: "/year",
@@ -419,6 +419,7 @@ export default function StorePlans({
           symflofi: "SymfloFi — Piso WiFi",
           playtab: "PlayTab — Tablet Gaming",
           symflokiosk: "SymfloKiosk — Payment Kiosk",
+          symflowisp: "SymfloWISP — Your ISP. One box.",
         };
         return products.map((product) => (
           <div key={product} className="mb-8">
@@ -600,6 +601,7 @@ export default function StorePlans({
                           symflofi: "SymfloFi",
                           playtab: "PlayTab",
                           symflokiosk: "SymfloKiosk",
+                          symflowisp: "SymfloWISP",
                         };
                         const hasMultipleProducts = new Set(licenseTierPrices.map((t) => t.product)).size > 1;
                         return licenseTierPrices.map((t) => (

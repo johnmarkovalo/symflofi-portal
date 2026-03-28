@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   SymfloFiPricing,
   PlayTabPricing,
+  SymfloWISPPricing,
   type PlanData,
 } from "@/components/pricing-section";
 
@@ -173,6 +174,7 @@ export default async function LandingPage() {
   // Try fetching with product filter; fall back to unfiltered if column doesn't exist yet
   let tiers: LicenseTier[] | null = null;
   let playtabTiers: LicenseTier[] | null = null;
+  let wispTiers: LicenseTier[] | null = null;
 
   const { data: sfTiers, error: sfErr } = await supabase
     .from("license_tiers")
@@ -199,13 +201,21 @@ export default async function LandingPage() {
       .eq("product", "playtab")
       .order("sort_order", { ascending: true });
     playtabTiers = ptTiers;
+    // SymfloWISP tiers
+    const { data: wTiers } = await supabase
+      .from("license_tiers")
+      .select("*")
+      .eq("is_public", true)
+      .eq("product", "symflowisp")
+      .order("sort_order", { ascending: true });
+    wispTiers = wTiers;
   }
 
   // Bulk discount: 20% off for 50+ licenses
   const BULK_DISCOUNT = 0.2;
   const BULK_QTY = 50;
 
-  function buildPlanData(tier: LicenseTier, product: "symflofi" | "playtab"): PlanData {
+  function buildPlanData(tier: LicenseTier, product: "symflofi" | "playtab" | "symflowisp"): PlanData {
     const isFree = tier.price_cents === 0;
     const bulkUnitCents = isFree ? 0 : Math.round(tier.price_cents * (1 - BULK_DISCOUNT));
     const savingsCents = tier.price_cents - bulkUnitCents;
@@ -231,6 +241,7 @@ export default async function LandingPage() {
 
   const plans: PlanData[] = (tiers ?? []).map((t: LicenseTier) => buildPlanData(t, "symflofi"));
   const playtabPlans: PlanData[] = (playtabTiers ?? []).map((t: LicenseTier) => buildPlanData(t, "playtab"));
+  const wispPlans: PlanData[] = (wispTiers ?? []).map((t: LicenseTier) => buildPlanData(t, "symflowisp"));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
@@ -470,6 +481,10 @@ export default async function LandingPage() {
 
         {playtabPlans.length > 0 && (
           <PlayTabPricing plans={playtabPlans} />
+        )}
+
+        {wispPlans.length > 0 && (
+          <SymfloWISPPricing plans={wispPlans} />
         )}
       </section>
 

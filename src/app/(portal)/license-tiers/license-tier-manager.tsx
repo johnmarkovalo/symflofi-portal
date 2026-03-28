@@ -51,12 +51,14 @@ const PRODUCT_LABELS: Record<string, string> = {
   symflofi: "SymfloFi — Piso WiFi",
   playtab: "PlayTab — Tablet Gaming",
   symflokiosk: "SymfloKiosk — Payment Kiosk",
+  symflowisp: "SymfloWISP — Your ISP. One box.",
 };
 
 const PRODUCT_COLORS: Record<string, { badge: string; border: string }> = {
   symflofi: { badge: "bg-primary/10 text-primary border-primary/20", border: "border-primary/20" },
   playtab: { badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", border: "border-emerald-500/20" },
   symflokiosk: { badge: "bg-amber-500/10 text-amber-400 border-amber-500/20", border: "border-amber-500/20" },
+  symflowisp: { badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20", border: "border-cyan-500/20" },
 };
 
 function formatPrice(cents: number) {
@@ -790,6 +792,7 @@ export default function LicenseTierManager({ initialTiers }: { initialTiers: Lic
               <option value="symflofi">SymfloFi</option>
               <option value="playtab">PlayTab</option>
               <option value="symflokiosk">SymfloKiosk</option>
+              <option value="symflowisp">SymfloWISP</option>
             </select>
           </div>
 

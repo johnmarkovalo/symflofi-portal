@@ -14,6 +14,7 @@ const PRODUCT_LABELS: Record<string, string> = {
   symflofi: "SymfloFi",
   playtab: "PlayTab",
   symflokiosk: "SymfloKiosk",
+  symflowisp: "SymfloWISP",
 };
 
 export default function GenerateKeyButton({ operators }: { operators: Operator[] }) {

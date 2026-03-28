@@ -203,7 +203,7 @@ async function processPaymentEvent(event: WebhookEvent) {
             .single();
 
           const durationDays = tier?.duration_days ?? 365;
-          const tierProduct = tier?.product ?? (item.tier_name.startsWith("playtab_") ? "playtab" : "symflofi");
+          const tierProduct = tier?.product ?? (item.tier_name.startsWith("playtab_") ? "playtab" : item.tier_name.startsWith("wisp_") ? "symflowisp" : "symflofi");
           const expiresAt = new Date();
           expiresAt.setDate(expiresAt.getDate() + durationDays);
 

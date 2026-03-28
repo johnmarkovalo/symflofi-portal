@@ -24,8 +24,9 @@ function ProductBadge({ product }: { product: string | null }) {
   const styles: Record<string, string> = {
     symflofi: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     playtab: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    symflowisp: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
   };
-  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab" };
+  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab", symflowisp: "SymfloWISP" };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[p] ?? styles.symflofi}`}>
       {labels[p] ?? p}
@@ -47,7 +48,7 @@ function TierBadge({ tier }: { tier: string }) {
   );
 }
 
-type ProductFilter = "all" | "symflofi" | "playtab";
+type ProductFilter = "all" | "symflofi" | "playtab" | "symflowisp";
 
 export default function MachineProductFilter({
   machines,
@@ -113,6 +114,7 @@ export default function MachineProductFilter({
     { key: "all", label: `All (${machines.length})` },
     { key: "symflofi", label: `SymfloFi (${machines.filter((m) => (m.product ?? "symflofi") === "symflofi").length})` },
     { key: "playtab", label: `PlayTab (${machines.filter((m) => m.product === "playtab").length})` },
+    { key: "symflowisp", label: `SymfloWISP (${machines.filter((m) => m.product === "symflowisp").length})` },
   ];
 
   return (
@@ -234,9 +236,12 @@ export default function MachineProductFilter({
               const isOnline = m.last_seen_at &&
                 new Date(m.last_seen_at).getTime() > now - 5 * 60 * 1000;
               const isPlayTab = (m.product ?? "symflofi") === "playtab";
+              const isWISP = (m.product ?? "symflofi") === "symflowisp";
               const hardwareLabel = isPlayTab
                 ? (m.hardware || "Android Tablet")
-                : (m.hardware || "-");
+                : isWISP
+                  ? (m.hardware || "x86 Mini PC")
+                  : (m.hardware || "-");
               return (
                 <tr key={m.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                   <td className="px-5 py-4">

@@ -43,8 +43,9 @@ function ProductBadge({ product }: { product: string | null }) {
   const styles: Record<string, string> = {
     symflofi: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     playtab: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    symflowisp: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
   };
-  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab" };
+  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab", symflowisp: "SymfloWISP" };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[p] ?? styles.symflofi}`}>
       {labels[p] ?? p}
@@ -88,7 +89,7 @@ export default function LicenseTable({
   operatorId: string | null;
 }) {
   const [refreshing, startTransition] = useTransition();
-  const [productFilter, setProductFilter] = useState<"all" | "symflofi" | "playtab">("all");
+  const [productFilter, setProductFilter] = useState<"all" | "symflofi" | "playtab" | "symflowisp">("all");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "activated" | "unbound" | "revoked" | "expired">("all");
   const [tierFilter, setTierFilter] = useState<"all" | string>("all");
@@ -285,10 +286,11 @@ export default function LicenseTable({
   const totalPages = Math.ceil(totalFiltered / perPage);
   const paginatedLicenses = filteredLicenses.slice((currentPage - 1) * perPage, currentPage * perPage);
 
-  const productTabs: { key: "all" | "symflofi" | "playtab"; label: string }[] = [
+  const productTabs: { key: "all" | "symflofi" | "playtab" | "symflowisp"; label: string }[] = [
     { key: "all", label: `All (${licenses.length})` },
     { key: "symflofi", label: `SymfloFi (${licenses.filter((l) => (l.product ?? "symflofi") === "symflofi").length})` },
     { key: "playtab", label: `PlayTab (${licenses.filter((l) => l.product === "playtab").length})` },
+    { key: "symflowisp", label: `SymfloWISP (${licenses.filter((l) => l.product === "symflowisp").length})` },
   ];
 
   return (

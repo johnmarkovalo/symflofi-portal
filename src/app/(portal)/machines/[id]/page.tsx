@@ -29,8 +29,9 @@ function ProductBadge({ product }: { product: string | null }) {
   const styles: Record<string, string> = {
     symflofi: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
     playtab: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    symflowisp: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
   };
-  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab" };
+  const labels: Record<string, string> = { symflofi: "SymfloFi", playtab: "PlayTab", symflowisp: "SymfloWISP" };
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium border ${styles[p] ?? styles.symflofi}`}>
       {labels[p] ?? p}

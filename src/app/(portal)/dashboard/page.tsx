@@ -234,6 +234,7 @@ export default async function DashboardPage() {
     const machinesProductData = (machinesWithProduct.data ?? []) as MachineRow[];
     const symflofiDeviceCount = machinesProductData.filter((m) => (m.product ?? "symflofi") === "symflofi").length;
     const playtabDeviceCount = machinesProductData.filter((m) => m.product === "playtab").length;
+    const wispDeviceCount = machinesProductData.filter((m) => m.product === "symflowisp").length;
 
     // --- Stat cards ---
     const stats = [
@@ -393,13 +394,16 @@ export default async function DashboardPage() {
               Active Boards
             </h3>
             {/* Product breakdown summary */}
-            {(symflofiDeviceCount > 0 || playtabDeviceCount > 0) && (
+            {(symflofiDeviceCount > 0 || playtabDeviceCount > 0 || wispDeviceCount > 0) && (
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-[10px] px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">
                   SymfloFi: {symflofiDeviceCount}
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
                   PlayTab: {playtabDeviceCount}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-medium">
+                  SymfloWISP: {wispDeviceCount}
                 </span>
               </div>
             )}
