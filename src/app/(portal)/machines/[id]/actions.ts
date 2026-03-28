@@ -71,6 +71,41 @@ export async function toggleSSH(machineId: string, enabled: boolean) {
   }
 }
 
+export async function updateMachineDetails(
+  machineId: string,
+  fields: { name?: string; customer_name?: string; notes?: string },
+) {
+  const ctx = await getUserContext();
+  if (!ctx || !ctx.role) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+
+  // Operators can only edit their own machines
+  if (ctx.role === "operator") {
+    const { data: machine } = await supabase
+      .from("machines")
+      .select("operator_id")
+      .eq("id", machineId)
+      .single();
+    if (!machine || machine.operator_id !== ctx.operatorId) {
+      return { error: "Unauthorized" };
+    }
+  }
+
+  const update: Record<string, string | null> = {};
+  if ("name" in fields) update.name = fields.name?.trim() || null;
+  if ("customer_name" in fields) update.customer_name = fields.customer_name?.trim() || null;
+  if ("notes" in fields) update.notes = fields.notes?.trim() || null;
+
+  const { error } = await supabase
+    .from("machines")
+    .update(update)
+    .eq("id", machineId);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 export async function deleteMachine(machineId: string) {
   const ctx = await getUserContext();
   if (!ctx || ctx.role !== "admin") {

@@ -6,6 +6,7 @@ import ActivityFeed from "@/components/activity-feed";
 import { LocalTime } from "@/components/local-time";
 import SSHToggle from "./ssh-toggle";
 import DeleteMachineButton from "./delete-machine-button";
+import MachineDetailsEdit from "./machine-details-edit";
 
 export const dynamic = "force-dynamic";
 
@@ -230,6 +231,12 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
                 <p className="text-foreground mt-0.5">{machine.operators.name || machine.operators.email}</p>
               </div>
             )}
+            {machine.customer_name && (
+              <div>
+                <p className="text-muted-foreground">Customer</p>
+                <p className="text-foreground mt-0.5">{machine.customer_name}</p>
+              </div>
+            )}
             <div>
               <p className="text-muted-foreground">License Key</p>
               {licenseId ? (
@@ -303,6 +310,17 @@ export default async function MachineDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
         )}
+      </div>
+
+      {/* Machine Details Edit */}
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-6 mb-6">
+        <h3 className="text-sm font-medium text-foreground mb-4">Details</h3>
+        <MachineDetailsEdit
+          machineId={id}
+          initialName={machine.name ?? ""}
+          initialCustomerName={machine.customer_name ?? ""}
+          initialNotes={machine.notes ?? ""}
+        />
       </div>
 
       <ActivityFeed activities={activitiesRes.data ?? []} />
