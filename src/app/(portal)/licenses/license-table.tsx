@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/toast";
 import { LocalTime } from "@/components/local-time";
 import SearchableSelect from "@/components/searchable-select";
+import Pagination from "@/components/pagination";
 
 type License = {
   id: string;
@@ -92,6 +93,8 @@ export default function LicenseTable({
   const [statusFilter, setStatusFilter] = useState<"all" | "activated" | "unbound" | "revoked" | "expired">("all");
   const [tierFilter, setTierFilter] = useState<"all" | string>("all");
   const [operatorFilter, setOperatorFilter] = useState<"all" | string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showTransfer, setShowTransfer] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -275,6 +278,13 @@ export default function LicenseTable({
     return true;
   });
 
+  // Reset to page 1 when filters change
+  useEffect(() => { setCurrentPage(1); }, [productFilter, search, statusFilter, tierFilter, operatorFilter]);
+
+  const totalFiltered = filteredLicenses.length;
+  const totalPages = Math.ceil(totalFiltered / perPage);
+  const paginatedLicenses = filteredLicenses.slice((currentPage - 1) * perPage, currentPage * perPage);
+
   const productTabs: { key: "all" | "symflofi" | "playtab"; label: string }[] = [
     { key: "all", label: `All (${licenses.length})` },
     { key: "symflofi", label: `SymfloFi (${licenses.filter((l) => (l.product ?? "symflofi") === "symflofi").length})` },
@@ -431,7 +441,7 @@ export default function LicenseTable({
             </tr>
           </thead>
           <tbody>
-            {filteredLicenses.map((lic) => {
+            {paginatedLicenses.map((lic) => {
               const isTransferable = !lic.is_activated && lic.operator_id === operatorId;
               const isChecked = selected.has(lic.id);
               return (
@@ -499,7 +509,7 @@ export default function LicenseTable({
                 </tr>
               );
             })}
-            {filteredLicenses.length === 0 && (
+            {paginatedLicenses.length === 0 && (
               <tr>
                 <td colSpan={canTransfer ? (isAdmin ? 10 : 9) : (isAdmin ? 9 : 8)} className="px-5 py-12 text-center text-muted-foreground">
                   {licenses.length === 0 ? "No license keys yet" : "No licenses match the selected filter"}
@@ -509,6 +519,16 @@ export default function LicenseTable({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        mode="client"
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={totalFiltered}
+        perPage={perPage}
+        onPageChange={setCurrentPage}
+        onPerPageChange={(n) => { setPerPage(n); setCurrentPage(1); }}
+      />
 
       {/* Transfer modal */}
       {showTransfer && (

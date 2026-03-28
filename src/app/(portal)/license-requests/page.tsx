@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import RequestActions from "./request-actions";
 import { LocalTime } from "@/components/local-time";
+import Pagination from "@/components/pagination";
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -32,17 +33,27 @@ function TierBadge({ tier }: { tier: string }) {
   );
 }
 
-export default async function LicenseRequestsPage() {
+export default async function LicenseRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; perPage?: string }>;
+}) {
   const ctx = await getUserContext();
   if (!ctx || !ctx.role) redirect("/signin");
+
+  const sp = await searchParams;
+  const perPage = Math.min(100, Math.max(1, parseInt(sp.perPage ?? "25")));
+  const page = Math.max(1, parseInt(sp.page ?? "1"));
+  const offset = (page - 1) * perPage;
 
   const supabase = await createClient();
   const isAdmin = ctx.role === "admin";
 
   let query = supabase
     .from("license_requests")
-    .select("*, operators(name, email, distributor_discount_pct), license_keys(id, key, is_activated, machine_id)")
-    .order("created_at", { ascending: false });
+    .select("*, operators(name, email, distributor_discount_pct), license_keys(id, key, is_activated, machine_id)", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(offset, offset + perPage - 1);
 
   // Fetch tier prices for admin sale tracking
   const { data: tierPrices } = isAdmin
@@ -57,7 +68,9 @@ export default async function LicenseRequestsPage() {
     query = query.eq("operator_id", ctx.operatorId);
   }
 
-  const { data: requests } = await query;
+  const { data: requests, count } = await query;
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / perPage);
 
   return (
     <div>
@@ -157,6 +170,14 @@ export default async function LicenseRequestsPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        mode="server"
+        currentPage={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        perPage={perPage}
+      />
     </div>
   );
 }

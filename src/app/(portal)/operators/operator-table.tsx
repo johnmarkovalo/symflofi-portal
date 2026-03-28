@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
 import SearchableSelect from "@/components/searchable-select";
+import Pagination from "@/components/pagination";
 
 function TierBadge({ tier, label }: { tier: string; label?: string }) {
   const styles: Record<string, string> = {
@@ -34,6 +35,8 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
   const [refreshing, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "operator" | "distributor">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
 
   const searchLower = search.toLowerCase();
 
@@ -46,6 +49,11 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
     }
     return true;
   });
+
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   return (
     <>
@@ -114,7 +122,7 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
             </tr>
           </thead>
           <tbody>
-            {filtered.map((op) => (
+            {paginated.map((op) => (
               <tr key={op.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                 <td className="px-5 py-4 font-medium text-foreground">
                   <Link href={`/operators/${op.id}`} className="hover:text-primary transition-colors">
@@ -154,7 +162,7 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">
                   {operators.length === 0 ? "No operators yet" : "No operators match the current filters"}
@@ -164,6 +172,16 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        mode="client"
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={filtered.length}
+        perPage={perPage}
+        onPageChange={setCurrentPage}
+        onPerPageChange={(n) => { setPerPage(n); setCurrentPage(1); }}
+      />
     </>
   );
 }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
 import SearchableSelect from "@/components/searchable-select";
+import Pagination from "@/components/pagination";
 
 type Machine = {
   id: string;
@@ -62,6 +63,8 @@ export default function MachineProductFilter({
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
   const [tierFilter, setTierFilter] = useState<"all" | string>("all");
   const [operatorFilter, setOperatorFilter] = useState<"all" | string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
 
   const now = Date.now(); // eslint-disable-line react-hooks/purity
 
@@ -100,6 +103,11 @@ export default function MachineProductFilter({
     }
     return true;
   });
+
+  useEffect(() => { setCurrentPage(1); }, [filter, search, statusFilter, tierFilter, operatorFilter]);
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   const tabs: { key: ProductFilter; label: string }[] = [
     { key: "all", label: `All (${machines.length})` },
@@ -222,7 +230,7 @@ export default function MachineProductFilter({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((m) => {
+            {paginated.map((m) => {
               const isOnline = m.last_seen_at &&
                 new Date(m.last_seen_at).getTime() > now - 5 * 60 * 1000;
               const isPlayTab = (m.product ?? "symflofi") === "playtab";
@@ -259,7 +267,7 @@ export default function MachineProductFilter({
                 </tr>
               );
             })}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr>
                 <td colSpan={isAdmin ? 8 : 7} className="px-5 py-12 text-center text-muted-foreground">
                   {machines.length === 0 ? "No machines registered yet" : "No machines match the selected filter"}
@@ -269,6 +277,16 @@ export default function MachineProductFilter({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        mode="client"
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalCount={filtered.length}
+        perPage={perPage}
+        onPageChange={setCurrentPage}
+        onPerPageChange={(n) => { setPerPage(n); setCurrentPage(1); }}
+      />
     </>
   );
 }

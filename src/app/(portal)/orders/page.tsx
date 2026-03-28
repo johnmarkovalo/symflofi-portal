@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserContext } from "@/lib/roles";
 import OrderKeys from "./order-keys";
 import RecordPayment from "./record-payment";
+import Pagination from "@/components/pagination";
 
 type OrderItem = {
   tier_label: string;
@@ -85,9 +86,18 @@ function lineItemsSummary(items: OrderItem[]) {
     .join(", ");
 }
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; perPage?: string }>;
+}) {
   const ctx = await getUserContext();
   if (!ctx || !ctx.role) redirect("/signin");
+
+  const params = await searchParams;
+  const perPage = Math.min(100, Math.max(1, parseInt(params.perPage ?? "25")));
+  const page = Math.max(1, parseInt(params.page ?? "1"));
+  const offset = (page - 1) * perPage;
 
   const supabase = await createClient();
   const isAdmin = ctx.role === "admin";
@@ -97,14 +107,18 @@ export default async function OrdersPage() {
     .select(
       `id, status, total_price_cents, amount_paid_cents, payment_method, payment_channel_type, paid_at, created_at, keys_generated, source, discount_pct, notes,
        license_order_items (tier_label, quantity, bonus_quantity)${isAdmin ? ", operators (name, email)" : ""}`,
+      { count: "exact" },
     )
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + perPage - 1);
 
   if (!isAdmin) {
     query = query.eq("operator_id", ctx.operatorId!);
   }
 
-  const { data: orders, error } = await query;
+  const { data: orders, count, error } = await query;
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / perPage);
 
   if (error) {
     return (
@@ -150,7 +164,7 @@ export default async function OrdersPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {typedOrders.map((order) => (
+          {typedOrders.map((order: OrderRow) => (
             <div
               key={order.id}
               className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border p-5"
@@ -256,6 +270,13 @@ export default async function OrdersPage() {
               )}
             </div>
           ))}
+          <Pagination
+            mode="server"
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            perPage={perPage}
+          />
         </div>
       )}
     </div>
