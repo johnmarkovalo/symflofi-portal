@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LocalTime } from "@/components/local-time";
@@ -50,12 +50,8 @@ export default function OperatorTable({ operators }: { operators: Operator[] }) 
     return true;
   });
 
-  const filterKey = `${search}|${roleFilter}`;
-  const prevFilterKey = useRef(filterKey);
-  if (prevFilterKey.current !== filterKey) {
-    prevFilterKey.current = filterKey;
-    if (currentPage !== 1) setCurrentPage(1);
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: reset page on filter change
+  useEffect(() => { setCurrentPage(1); }, [search, roleFilter]);
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
